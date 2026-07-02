@@ -7,6 +7,7 @@ Personal agent skills for @fuj1g0n, deployed user-wide via
 
 | Skill | Purpose | Adapted from |
 |-------|---------|--------------|
+| [skill-management](skills/skill-management/SKILL.md) | Operational rules: all skill deployment via APM, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
 | [nix-manager](skills/nix-manager/SKILL.md) | User-level package management with `nix profile` (Determinate Nix patterns) | [wcygan/dotfiles](https://github.com/wcygan/dotfiles) |
 | [nix-for-dev](skills/nix-for-dev/SKILL.md) | Repository-level dev environment: zero-inputs flake + npins + devShell + direnv + just | [srid/emanote](https://github.com/srid/emanote) |
 | [missing-tools](skills/missing-tools/SKILL.md) | Resolve missing CLI tools without global installs (direnv exec → comma → nix run → nix shell, uvx for Python) | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
