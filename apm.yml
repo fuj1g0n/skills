@@ -1,0 +1,7 @@
+name: skills
+version: 1.0.0
+description: Personal agent skills for fuj1g0n (Nix environment, APM-based skill management)
+author: fuj1g0n
+dependencies:
+  apm:
+    - microsoft/apm/packages/apm-guide#bf4a2b8101418a21332a3af59f26384a6ce27eb7
