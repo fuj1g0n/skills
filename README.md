@@ -5,12 +5,13 @@ Personal agent skills for @fuj1g0n, deployed user-wide via
 
 ## Skills
 
-| Skill | Purpose |
-|-------|---------|
-| [nix-env-setup](skills/nix-env-setup/SKILL.md) | User-level (`nix profile`) and repository-level (flake devShell + direnv + just) environment setup with Nix |
-| [missing-tools](skills/missing-tools/SKILL.md) | Resolve missing CLI tools without global installs (`direnv exec` → `nix run` → `nix shell` → uvx) |
-| [nix-github-rate-limit](skills/nix-github-rate-limit/SKILL.md) | Token injection via `gh auth token` for GitHub-backed Nix fetches |
-| [nix-gc-direnv](skills/nix-gc-direnv/SKILL.md) | Clean up `.direnv` GC roots to reclaim Nix store space |
+| Skill | Purpose | Adapted from |
+|-------|---------|--------------|
+| [nix-manager](skills/nix-manager/SKILL.md) | User-level package management with `nix profile` (Determinate Nix patterns) | [wcygan/dotfiles](https://github.com/wcygan/dotfiles) |
+| [nix-for-dev](skills/nix-for-dev/SKILL.md) | Repository-level dev environment: zero-inputs flake + npins + devShell + direnv + just | [srid/emanote](https://github.com/srid/emanote) |
+| [missing-tools](skills/missing-tools/SKILL.md) | Resolve missing CLI tools without global installs (direnv exec → comma → nix run → nix shell, uvx for Python) | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
+| [nix-github-rate-limit](skills/nix-github-rate-limit/SKILL.md) | Safe token injection via `gh auth token` for GitHub-backed Nix fetches | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
+| [nix-gc-direnv](skills/nix-gc-direnv/SKILL.md) | Clean up `.direnv` GC roots to reclaim Nix store space | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
 
 ## Install
 
@@ -25,10 +26,3 @@ dependencies:
   apm:
     - fuj1g0n/skills#<sha>
 ```
-
-## Credits
-
-Adapted from patterns in
-[ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles),
-[wcygan/dotfiles](https://github.com/wcygan/dotfiles), and
-[srid/emanote](https://github.com/srid/emanote) (`nix-for-dev`).
