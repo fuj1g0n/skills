@@ -16,6 +16,11 @@ Personal agent skills for @fuj1g0n, deployed user-wide via
 
 ## Install
 
+### Whole package
+
+Installs all skills plus re-exported dependencies (`apm.yml` transitive deps,
+e.g. `apm-usage` from microsoft/apm):
+
 ```sh
 apm install -g fuj1g0n/skills
 ```
@@ -25,5 +30,27 @@ Pin to a commit in `~/.apm/apm.yml`:
 ```yaml
 dependencies:
   apm:
-    - fuj1g0n/skills#<sha>
+    - fuj1g0n/skills#<full-40-char-sha>
 ```
+
+### Single skill
+
+Install only one skill as a virtual subdirectory package (no transitive
+dependencies come along):
+
+```sh
+apm install -g "fuj1g0n/skills/.apm/skills/<name>#<full-40-char-sha>"
+```
+
+Or in `apm.yml` (object form):
+
+```yaml
+dependencies:
+  apm:
+    - git: fuj1g0n/skills
+      path: .apm/skills/<name>
+      ref: <full-40-char-sha>
+```
+
+Note: pin with a full 40-char commit SHA (or a tag); short SHAs and floating
+branches do not resolve reliably.
