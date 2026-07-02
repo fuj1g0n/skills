@@ -15,7 +15,7 @@ For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
 ## Layout
 
 - **Personal skills repo**: github.com/fuj1g0n/skills
-  (clone: `~/workspace/github/skills`, layout: `skills/<name>/SKILL.md`)
+  (clone: `~/workspace/github/skills`, layout: `.apm/skills/<name>/SKILL.md`)
 - **User scope manifest**: `~/.apm/apm.yml`; deploys to `~/.agents/skills/`
 - **Project scope manifest**: `apm.yml` in the repo; commit `apm.yml` and
   `apm.lock.yaml`, gitignore `apm_modules/`
@@ -29,7 +29,7 @@ For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
 
 ## Editing personal skills
 
-1. Edit under `~/workspace/github/skills/skills/<name>/SKILL.md`.
+1. Edit under `~/workspace/github/skills/.apm/skills/<name>/SKILL.md`.
 2. Commit and push (`main`).
 3. Update the pin in `~/.apm/apm.yml`:
 
@@ -68,6 +68,24 @@ in every conversation. Install deliberately.
    SHA=$(gh api repos/<owner>/<repo>/commits/<branch> --jq .sha)
    apm install -g "<owner>/<repo>[/path]#$SHA"
    ```
+
+## Re-exporting third-party skills
+
+The personal repo is an APM package (`apm.yml` at root, skills under
+`.apm/skills/`). Third-party skills used as-is are declared as dependencies in
+the repo's `apm.yml` and re-exported transitively — the machine's
+`~/.apm/apm.yml` only depends on `fuj1g0n/skills`:
+
+```yaml
+# fuj1g0n/skills apm.yml
+dependencies:
+  apm:
+    - microsoft/apm/packages/apm-guide#<full-sha>
+```
+
+Verify resolution with `apm deps tree` (run in `~/.apm`). Note: the
+`.apm/skills/` layout is required — a bare `skills/<name>/SKILL.md` repo is
+classified as `skill_bundle` and its `apm.yml` dependencies are ignored.
 
 ## Scope decision
 
