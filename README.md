@@ -54,3 +54,11 @@ dependencies:
 
 Note: pin with a full 40-char commit SHA (or a tag); short SHAs and floating
 branches do not resolve reliably.
+
+## Decisions
+
+Architecture decision records live in [docs/adr/](docs/adr/):
+
+- [0001](docs/adr/0001-manage-user-global-skills-with-apm.md) — Manage user-global agent skills with Microsoft APM and a personal skills repository
+- [0002](docs/adr/0002-apm-package-layout-and-reexport.md) — Use the `.apm/skills/` package layout and re-export third-party skills as APM dependencies
+- [0003](docs/adr/0003-curated-skill-set-external-survey.md) — Curated skill set for development process and environment setup (external landscape survey)
