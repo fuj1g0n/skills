@@ -66,3 +66,4 @@ format, see ADR-0004):
 - [0003](docs/adr/0003-curated-skill-set-external-survey.md) — Curate the development-environment skill set from an external landscape survey
 - [0004](docs/adr/0004-adopt-madr-format.md) — Adopt MADR 4.0 as the ADR format
 - [0005](docs/adr/0005-adr-skill-sourcing.md) — Author an original `adr` skill adapted from MIT-licensed sources
+- [0006](docs/adr/0006-manage-adr-research-material.md) — Manage ADR research material with a three-tier rule (embed, snapshot, or link)
