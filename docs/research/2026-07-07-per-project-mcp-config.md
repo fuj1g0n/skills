@@ -116,7 +116,48 @@ policy, no human override at survey time):
 Status at survey time: no milestone, no implementing PR; unimplemented in
 v0.24.0 and main.
 
-## 5. Cross-cutting conclusion
+## 5. User-global MCP config readable by both Copilot CLI and VS Code?
+
+Surveyed same day (2026-07-07). **No such shared location exists natively.**
+
+Global config per tool:
+
+- Copilot CLI (user scope): `~/.copilot/mcp-config.json` only
+  (`mcpServers` key). It reads no other global files.
+- VS Code (user scope): profile-level `mcp.json` (**MCP: Open User
+  Configuration**; `servers` key), plus opt-in discovery of *other tools'*
+  global configs via `chat.mcp.discovery.enabled`.
+
+VS Code's discovery adapters (microsoft/vscode main,
+`common/discovery/nativeMcpDiscoveryAdapters.ts`) cover exactly three
+global sources, all parsed as Claude-style `mcpServers` via
+`claudeConfigToServerDefinition`:
+
+| DiscoverySource | File (Linux) |
+|---|---|
+| `claude-desktop` | `$XDG_CONFIG_HOME/Claude/claude_desktop_config.json` |
+| `windsurf` | `~/.codeium/windsurf/mcp_config.json` |
+| `cursor-global` | `~/.cursor/mcp.json` |
+
+There is **no adapter for `~/.copilot/mcp-config.json`** — VS Code cannot
+discover Copilot CLI's global config, and Copilot CLI reads none of the
+above. APM offers no bridge either: `apm install -g` deploys to
+global-capable runtimes (Copilot CLI, Claude Code, ...) and explicitly
+skips workspace-only runtimes including VS Code
+(microsoft.github.io/apm/reference/cli/install/).
+
+Workaround (hack, not adopted): both `~/.copilot/mcp-config.json` and
+`claude_desktop_config.json` use the `mcpServers` schema, so symlinking
+`~/.config/Claude/claude_desktop_config.json` →
+`~/.copilot/mcp-config.json` and enabling the `claude-desktop` discovery
+source would let VS Code mirror the CLI's global servers — mislabeled as
+"Claude Desktop", conflicting if the real Claude Desktop is installed, and
+dependent on undocumented format tolerance. Maintaining VS Code's own user
+`mcp.json` in parallel (dual maintenance) is the honest alternative. Both
+reinforce the project-root `.mcp.json` decision as the only true
+single-file cross-tool location.
+
+## 6. Cross-cutting conclusion
 
 A single project-root `.mcp.json` in Claude-style `{"mcpServers": {...}}`
 format is readable by Copilot CLI (≥1.0.12), VS Code (≥2026-04-23 stable),
