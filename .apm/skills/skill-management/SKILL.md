@@ -15,7 +15,7 @@ For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
 ## Layout
 
 - **Personal skills repo**: github.com/fuj1g0n/skills
-  (clone: `~/workspace/github/skills`, layout: `.apm/skills/<name>/SKILL.md`)
+  (clone: `~/workspace/github.com/fuj1g0n/skills`, layout: `.apm/skills/<name>/SKILL.md`)
 - **User scope manifest**: `~/.apm/apm.yml`; deploys to `~/.agents/skills/`
 - **Project scope manifest**: `apm.yml` in the repo; commit `apm.yml` and
   `apm.lock.yaml`, gitignore `apm_modules/`

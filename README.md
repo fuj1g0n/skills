@@ -8,6 +8,7 @@ Personal agent skills for @fuj1g0n, deployed user-wide via
 | Skill | Purpose | Adapted from |
 |-------|---------|--------------|
 | [skill-management](.apm/skills/skill-management/SKILL.md) | Operational rules: all skill deployment via APM, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
+| [skill-authoring](.apm/skills/skill-authoring/SKILL.md) | Quality rules for writing skills: description discipline, length thresholds, collection audit (`audit.sh`), subagent-based testing | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
 | [adr](.apm/skills/adr/SKILL.md) | Write and maintain Architecture Decision Records in MADR 4.0 format (trigger calibration, supersede workflow, vendored MADR templates) | original (adapted from [cassiobotaro/skills](https://github.com/cassiobotaro/skills), [wshobson/agents](https://github.com/wshobson/agents), [github/awesome-copilot](https://github.com/github/awesome-copilot), all MIT; MADR templates from [adr/madr](https://github.com/adr/madr)) |
 | [nix-manager](.apm/skills/nix-manager/SKILL.md) | User-level package management with `nix profile` (Determinate Nix patterns) | [wcygan/dotfiles](https://github.com/wcygan/dotfiles) |
 | [nix-for-dev](.apm/skills/nix-for-dev/SKILL.md) | Repository-level dev environment: zero-inputs flake + npins + devShell + direnv + just | [srid/emanote](https://github.com/srid/emanote) |
@@ -67,3 +68,4 @@ format, see ADR-0004):
 - [0004](docs/adr/0004-adopt-madr-format.md) — Adopt MADR 4.0 as the ADR format
 - [0005](docs/adr/0005-adr-skill-sourcing.md) — Author an original `adr` skill adapted from MIT-licensed sources
 - [0006](docs/adr/0006-manage-adr-research-material.md) — Manage ADR research material with a three-tier rule (embed, snapshot, or link)
+- [0007](docs/adr/0007-author-original-skill-authoring-skill.md) — Author an original `skill-authoring` skill combining audited upstream practices
