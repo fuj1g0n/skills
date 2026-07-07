@@ -7,59 +7,75 @@ description: Resolves missing CLI tools. Use when a command is unavailable, a sh
 
 Use this workflow when a command is unavailable in the current shell.
 
-## Priority Order
+## Step 1: Decide the scope
 
-1. Try the current project's direnv environment:
+Before running anything, classify why the tool is needed:
 
-   ```sh
-   direnv exec . <command>
-   ```
+| Scope | Signal | Action |
+|---|---|---|
+| **One-shot** | Needed once or a few times in this session only | Handle here — see below |
+| **Project dev tool** | Part of the project's toolchain, needed repeatedly (build, lint, test, codegen) | Delegate to the `nix-for-dev` skill: add it to the flake devShell, then run via `direnv exec .` |
+| **User-wide tool** | Used across many projects, independent of any one repo | Delegate to the `nix-manager` skill: install via `nix profile` |
 
-2. Use [comma](https://github.com/nix-community/comma) for tools from nixpkgs,
-   if `,` is available:
+Ask the user when the scope is unclear. Do not quietly resolve a recurring
+project dependency with one-shot runs — persist it via the right skill.
+
+## Step 2: One-shot execution
+
+### 2.0 Check the project environment first
+
+The tool may already exist in the project's dev shell:
+
+```sh
+direnv exec . <command>
+```
+
+### 2.1 Ecosystem-native runners
+
+When the tool belongs to a language ecosystem, prefer that ecosystem's
+ephemeral runner:
+
+| Ecosystem | Runner | Example |
+|---|---|---|
+| Python | `uvx` | `uvx ruff check .` |
+| Node.js | `npx -y` (or `pnpm dlx` / `bunx`, matching the project's package manager) | `npx -y prettier --check .` |
+| Go | `go run <module>@<version>` | `go run golang.org/x/tools/cmd/goimports@latest -l .` |
+| Rust | none (`cargo install` is persistent) | fall through to nixpkgs below |
+
+Inside a uv-managed project, use `uv run <command>` instead of `uvx` so the
+project's own environment is used.
+
+### 2.2 Generic fallback: nixpkgs
+
+For tools with no ecosystem runner (or Rust CLIs):
+
+1. [comma](https://github.com/nix-community/comma), if `,` is available —
+   automatically finds the nixpkgs package containing the command:
 
    ```sh
    , <command>
    ```
 
-   When comma may fetch from GitHub, also use the `nix-github-rate-limit` skill.
-
-3. Use `nix run` when a specific nixpkgs package is needed:
+2. `nix run` when you know the package:
 
    ```sh
    nix run nixpkgs#<package> -- <args>
    ```
 
-   When the command may fetch from GitHub, also use the `nix-github-rate-limit` skill.
-
-4. Use `nix shell` as the last resort:
+3. `nix shell` as the last resort (multiple tools, or command != package):
 
    ```sh
    nix shell nixpkgs#<package> --command <command>
    ```
 
-   When the command may fetch from GitHub, also use the `nix-github-rate-limit` skill.
-
-## Python tools
-
-For Python CLIs, prefer uv over Nix:
-
-```sh
-uvx <tool>            # one-off run of a Python CLI
-uv run <command>      # inside a uv-managed project
-```
+Whenever these may fetch from GitHub, also use the `nix-github-rate-limit`
+skill. Package name sometimes differs from command name; search with
+`nix search nixpkgs <command>` or https://search.nixos.org.
 
 ## Notes
 
-- Never install missing tools globally. Do not use commands such as
-  `apt-get install`, `npm install -g`, `npm i -g`, `pnpm add -g`,
-  `yarn global add`, `bun add -g`, `uv tool install`, `brew install`, or
-  language-specific global installers to resolve a missing command.
-- Prefer `direnv exec .` first because project-local dev shells often already
-  provide the right tool version and environment variables.
-- Comma automatically finds and runs the nixpkgs package containing the
-  requested command. Package name differs from command name sometimes; search
-  with `nix search nixpkgs <command>` or https://search.nixos.org.
-- If the tool will be needed repeatedly, stop and persist it instead: add it
-  to the project's flake devShell (see `nix-for-dev`) or install it user-wide
-  (see `nix-manager`). Ask the user when the scope is unclear.
+- Never install missing tools globally from this skill. Do not use commands
+  such as `apt-get install`, `npm install -g`, `pnpm add -g`,
+  `yarn global add`, `bun add -g`, `uv tool install`, `cargo install`,
+  `brew install`, or other global installers — persistent installs go
+  through `nix-for-dev` (project) or `nix-manager` (user-wide).

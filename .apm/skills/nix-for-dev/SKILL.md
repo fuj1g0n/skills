@@ -124,6 +124,10 @@ direnv allow
 nix-direnv caches the shell as a GC root under `.direnv/`; clean up stale
 roots with the `nix-gc-direnv` skill.
 
+**Scope rule**: the devShell holds the project's recurring toolchain. Tools
+used across many projects go user-wide (see `nix-manager`); tools needed
+only once are run ephemerally, not added here (see `missing-tools`).
+
 ## Sub-flakes for non-user-facing Nix
 
 Module integration tests (home-manager, NixOS, Darwin) genuinely need

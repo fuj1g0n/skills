@@ -18,7 +18,8 @@ User-level package management following Determinate Systems best practices.
 - **Forbidden**: `apt-get`, `brew`, `nix-env -i`, devbox (removed from this
   system)
 - **Scope rule**: only install user-wide when a tool is used across many
-  projects; project toolchains belong in flake devShells (see `nix-for-dev`)
+  projects; project toolchains belong in flake devShells (see `nix-for-dev`),
+  and one-shot needs are run ephemerally instead (see `missing-tools`)
 
 ### 2. Package Management Operations
 
