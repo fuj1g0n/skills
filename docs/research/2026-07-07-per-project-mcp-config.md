@@ -157,7 +157,69 @@ dependent on undocumented format tolerance. Maintaining VS Code's own user
 reinforce the project-root `.mcp.json` decision as the only true
 single-file cross-tool location.
 
-## 6. Cross-cutting conclusion
+## 6. Upstream issues and discussions (surveyed 2026-07-07)
+
+### github/copilot-cli (issue states verified via `gh issue view`)
+
+| Issue | Title | State |
+|---|---|---|
+| #39 | Integration of MCP settings with VS Code | CLOSED 2026-02-25 |
+| #54 | ...fully integrate and leverage features from VS Code Copilot Chat setup | CLOSED 2026-04-06 |
+| #146 | Respect VS Code User Settings for Copilot CLI Configuration (e.g., mcp.json) | **OPEN** (backlog, no maintainer commitment) |
+| #225 | Share MCP configuration with VSCode | CLOSED 2025-11-05 as dup of #39 (@ellismg: "duplicate of #39 (and related to #54)") |
+| #3019 | Breaking Change: .vscode/mcp.json is no longer supported | **OPEN**, labels `area:configuration`, `area:mcp` |
+
+Narrative: #39 was the canonical "share MCP config with VS Code" request;
+it was answered by adding `.vscode/mcp.json` loading (v0.0.407,
+2026-02-11) and closed 2026-02-25 — then v1.0.22 (2026-04-09) **removed**
+that support in favor of `.mcp.json`, with no linked issue/PR stating the
+rationale (changelog entry + migration hint only). #3019 captures the
+fallout; late #39 comments show ongoing confusion (docs' "Migrating from
+.vscode/mcp.json" section vs. earlier "we now load .vscode/mcp.json"
+statements). A #3019 comment claims ".mcp.json (which VSCode doesn't
+support)" — already outdated: VS Code gained root `.mcp.json` discovery
+on 2026-04-23 (PR #312234, milestone 1.118), two weeks after the CLI's
+switch. Convergence on root `.mcp.json` happened across the two tools
+within a month, but is documented in neither product's docs.
+
+User-global unification: no maintainer has committed to the CLI reading VS
+Code's user-profile `mcp.json` (#146 open in backlog), nor addressed the
+`mcpServers` vs `servers` root-key mismatch (also raised in
+github.com/orgs/community/discussions/187954, unanswered). No request for
+an XDG/`~/.mcp.json` cross-tool location exists in the tracker; the CLI
+does honor `XDG_CONFIG_HOME` for its own directory (cf. github/docs#40682).
+
+### microsoft/vscode
+
+- No issue requests discovery of `~/.copilot/mcp-config.json` or Claude
+  Code's `~/.claude.json` (searches: `"mcp-config.json"`, `"claude.json"
+  mcp`, `label:feature-request mcp discovery` — zero matching).
+- PR #312234 (workspace `.mcp.json` discovery) was a proactive addition by
+  @connor4312 with **no linked issue** and no cross-tool-global discussion;
+  the PR body frames it as "Claude-style format" for shareable workspace
+  config.
+- #248368 (closed 2025-05-16): @connor4312 confirms
+  `chat.mcp.discovery.enabled` takes per-source booleans and that "VS
+  Code's own configs are always discovered"; Copilot CLI is not among the
+  sources.
+
+### modelcontextprotocol
+
+Discussion modelcontextprotocol#2218 (2026-02-06): community proposal for
+a universal `mcp.json` + `mcpServers` standard across tools (its table
+lists VS Code's `servers` key as the main divergence). 9 upvotes, no
+maintainer response, no SEP; the MCP spec does not address client config
+locations.
+
+### Implication for this decision
+
+Project-root `.mcp.json` is the only point of *de facto* convergence, and
+it emerged from both vendors independently within weeks (CLI v1.0.22
+2026-04-09; VS Code PR #312234 2026-04-23) without a shared standard
+behind it. User-global unification has demand (#146, #3019,
+community#187954) but no committed direction on either side.
+
+## 7. Cross-cutting conclusion
 
 A single project-root `.mcp.json` in Claude-style `{"mcpServers": {...}}`
 format is readable by Copilot CLI (≥1.0.12), VS Code (≥2026-04-23 stable),
