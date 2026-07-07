@@ -278,7 +278,63 @@ Cross-tool overlap per scope:
   VS Code + the GitHub tools together.
 * Cloud agent stands alone (server-side settings UI).
 
-## 9. Cross-cutting conclusion
+## 9. APM global write-back and the `--exclude` flag (verified 2026-07-07)
+
+Because the copilot adapter hardcodes `~/.copilot/mcp-config.json` (section
+3), **every plain `apm install` in a project with MCP-bearing dependencies
+re-adds those servers to the user-global config**, defeating the "keep the
+global file empty" decision until microsoft/apm#2047 ships. Observed
+empirically in what-number: azure reappeared in the global file after
+`apm install` and had to be removed manually.
+
+Two project-side countermeasures were verified:
+
+### `apm install --exclude copilot`
+
+The `--exclude <runtime>` flag skips a runtime during MCP integration. Its
+data flow was traced through the apm 0.23.1 source
+(`apm_cli/commands/install.py`) to confirm the blast radius:
+
+* The flag value reaches **only** MCP integration:
+  `MCPIntegrator.install(..., ctx.exclude, ...)` (line 1920),
+  `MCPIntegrator.remove_stale(..., ctx.exclude, ...)` (lines 1939, 1953),
+  and the single-server `apm install --mcp` path (`_handle_mcp_install`,
+  lines 1406 → 879). The actual filter is
+  `target_runtimes = [r for r in target_runtimes if r != exclude]` in
+  `integration/mcp_integrator_install.py`.
+* It does **not** reach skill/prompt/instruction deployment. Occurrences of
+  "exclude" elsewhere (e.g. `skill_integrator.py`) are unrelated file
+  patterns (`bin/` exclusion etc.). The `"--exclude"` entry at install.py
+  line 1288 is only a rejected-flag error message for the skill-bundle path.
+* LSP integration (`install/lsp/integration.py`) accepts an `exclude`
+  parameter but the `apm install` call site (install.py lines 1970–1981)
+  does not pass it — always `None` in 0.23.1.
+* Empirically confirmed in what-number: with `--exclude copilot`, the
+  global `~/.copilot/mcp-config.json` is byte-identical before/after,
+  `.vscode/mcp.json` is still written (vscode is a separate runtime), and
+  all skills deploy normally.
+
+### Lifecycle conversion to workspace `.mcp.json`
+
+APM lifecycle scripts (project `apm.yml` `lifecycle:` block, `post-install`
+/ `post-update` events, gated by `apm lifecycle trust`) can generate the
+workspace file from the vscode adapter's output:
+
+```yaml
+lifecycle:
+  post-install:
+    - run: '[ -f .vscode/mcp.json ] && jq "{mcpServers: .servers}" .vscode/mcp.json > .mcp.json || true'
+```
+
+Verified in what-number: `.mcp.json` is (re)generated on every install and
+Copilot CLI lists the server as a Workspace server.
+
+Combined (lifecycle conversion + `--exclude copilot`), a project gets a
+committed root `.mcp.json` and an untouched global config from a single
+install command. The wrapper that makes `--exclude copilot` the default
+(task-runner recipe, alias, script, …) is a per-project choice.
+
+## 10. Cross-cutting conclusion
 
 A single project-root `.mcp.json` in Claude-style `{"mcpServers": {...}}`
 format is readable by Copilot CLI (≥1.0.12), the Copilot App (via the CLI

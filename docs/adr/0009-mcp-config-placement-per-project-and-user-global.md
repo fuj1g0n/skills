@@ -95,6 +95,17 @@ rests on undocumented format tolerance.
 The cloud agent is out of scope for file placement: its MCP servers are
 managed in repository settings per repository.
 
+**Countermeasure requirement**: until microsoft/apm#2047 ships, plain
+`apm install` in a project with MCP-bearing dependencies writes those
+servers back into `~/.copilot/mcp-config.json`, silently violating the
+user-global decision above. Any project using APM with MCP-bearing
+dependencies must therefore prevent this write-back. Two verified building
+blocks are `apm install --exclude copilot` (source-traced to affect MCP
+integration only — skills, prompts and instructions deploy unchanged) and a
+lifecycle `post-install`/`post-update` script converting `.vscode/mcp.json`
+into the root `.mcp.json`. *How* the countermeasure is made durable
+(task-runner recipe, wrapper script, alias, …) is left to each project.
+
 ### Consequences
 
 * Good, because one committed `.mcp.json` gives project-scoped MCP to all
@@ -110,6 +121,9 @@ managed in repository settings per repository.
 * Bad, because a future cross-project server costs dual maintenance
   (`~/.copilot/mcp-config.json` + VS Code profile `mcp.json`) if it must
   reach VS Code.
+* Bad, because the write-back countermeasure adds a per-project convention
+  that anyone running plain `apm install` can accidentally bypass, and it
+  becomes obsolete cleanup once microsoft/apm#2047 ships.
 
 ## More Information
 
@@ -121,4 +135,6 @@ once implemented, prefer `apm install` as the owner of the file.
 
 Amended 2026-07-07 (same day as acceptance, before any dependent work): the
 original decision covered only the per-project axis; extended to both axes
-with the Copilot App included, at the decision-maker's direction.
+with the Copilot App included, at the decision-maker's direction. Amended
+again later the same day to require a countermeasure against APM's global
+MCP write-back (research snapshot §9), mechanism left per project.
