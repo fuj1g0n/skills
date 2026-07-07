@@ -313,6 +313,15 @@ data flow was traced through the apm 0.23.1 source
   global `~/.copilot/mcp-config.json` is byte-identical before/after,
   `.vscode/mcp.json` is still written (vscode is a separate runtime), and
   all skills deploy normally.
+* Also verified with targets narrowed to copilot: in a project with
+  `targets: [copilot, agent-skills]`, `.agents/skills/` and `.github/hooks/`
+  were deleted and `apm install --exclude copilot` re-run — target
+  resolution still logged `Targets: agent-skills, copilot (source:
+  apm.yml)`, all 41 skills were re-deployed, and the copilot-specific
+  artifacts (`copilot-hooks.json`-routed hooks under `.github/hooks/`) were
+  re-integrated. Skill/prompt/hook deployment resolves targets from
+  apm.yml's `targets:` and never sees `--exclude`; only the copilot
+  *runtime* inside MCP integration is excluded.
 
 ### Lifecycle conversion to workspace `.mcp.json`
 
