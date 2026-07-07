@@ -33,17 +33,20 @@ direnv exec . <command>
 ### 2.1 Ecosystem-native runners
 
 When the tool belongs to a language ecosystem, prefer that ecosystem's
-ephemeral runner:
+ephemeral runner. The runner itself (uv, node, go, ...) is a project-wide
+concern: if the project's devShell provides it, run it via `direnv exec .`;
+otherwise obtain the runner itself through Nix — never install it globally.
 
-| Ecosystem | Runner | Example |
+| Ecosystem | In a devShell that has the runner | Runner via Nix |
 |---|---|---|
-| Python | `uvx` | `uvx ruff check .` |
-| Node.js | `npx -y` (or `pnpm dlx` / `bunx`, matching the project's package manager) | `npx -y prettier --check .` |
-| Go | `go run <module>@<version>` | `go run golang.org/x/tools/cmd/goimports@latest -l .` |
+| Python | `direnv exec . uvx ruff check .` | `nix shell nixpkgs#uv --command uvx ruff check .` |
+| Node.js | `direnv exec . npx -y prettier --check .` | `nix shell nixpkgs#nodejs --command npx -y prettier --check .` |
+| Go | `direnv exec . go run golang.org/x/tools/cmd/goimports@latest -l .` | `nix shell nixpkgs#go --command go run <module>@<version>` |
 | Rust | none (`cargo install` is persistent) | fall through to nixpkgs below |
 
-Inside a uv-managed project, use `uv run <command>` instead of `uvx` so the
-project's own environment is used.
+Match the project's package manager for Node (`pnpm dlx` via `nixpkgs#pnpm`,
+`bunx` via `nixpkgs#bun`). Inside a uv-managed project, use `uv run
+<command>` instead of `uvx` so the project's own environment is used.
 
 ### 2.2 Generic fallback: nixpkgs
 
