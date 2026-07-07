@@ -122,6 +122,17 @@ template:
   one honest `Bad` in every non-trivial ADR.
 - **Length**: half a page to two pages. Shorter records get read.
 
+**Research material.** Surveys and field research behind a decision are
+handled in three tiers: the decision-relevant essence (options, drivers,
+deciding evidence) is embedded in the ADR body so the ADR alone supports
+re-litigation; raw research that would push the ADR past the length ceiling
+but has lasting value becomes a dated, immutable snapshot in the repository
+(follow the log's existing convention; default
+`docs/research/YYYY-MM-DD-topic.md`), linked from `## More Information`;
+ephemeral working notes stay in PR descriptions or issues, uncommitted.
+Never let essential justification live only behind an external link — link
+rot voids the ADR.
+
 ### 5. Initialize a fresh log
 
 Mirror the MADR convention: create the directory and seed it with
