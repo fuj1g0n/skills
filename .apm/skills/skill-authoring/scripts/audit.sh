@@ -28,18 +28,32 @@ if [[ ! -d $skills_dir ]]; then
   exit 1
 fi
 
-# Extract a single-line frontmatter value (name: / description:) from a SKILL.md.
+# Extract a frontmatter value (name: / description:) from a SKILL.md.
+# Handles single-line values and block scalars (>, |, >-, |-): continuation
+# lines are joined so multi-line descriptions are measured, not read as "1".
 # Reads only the block between the first two '---' fences.
 frontmatter_value() {
   local file="$1" key="$2"
   awk -v key="$key" '
     NR == 1 && $0 == "---" { in_fm = 1; next }
     in_fm && $0 == "---" { exit }
-    in_fm && $0 ~ "^" key ":" {
-      sub("^" key ": *", "")
-      print
+    collecting {
+      if ($0 ~ /^[[:space:]]/ || $0 == "") {
+        line = $0
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+        if (line != "") out = out (out == "" ? "" : " ") line
+        next
+      }
       exit
     }
+    in_fm && $0 ~ "^" key ":" {
+      val = $0
+      sub("^" key ": *", "", val)
+      if (val ~ /^[>|][+-]?$/) { collecting = 1; next }
+      print val
+      exit
+    }
+    END { if (collecting) print out }
   ' "$file"
 }
 

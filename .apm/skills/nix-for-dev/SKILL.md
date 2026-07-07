@@ -79,49 +79,10 @@ npins update                                 # update all pins
 npins update nixpkgs                         # update one
 ```
 
-`nix/nixpkgs.nix`:
-
-```nix
-# Pinned nixpkgs import — managed by npins.
-# To update: npins update nixpkgs
-let
-  sources = import ../npins;
-  nixpkgs = import sources.nixpkgs;
-in
-args: nixpkgs (args // {
-  overlays = (args.overlays or [ ]) ++ [ (import ./overlay.nix) ];
-})
-```
-
-## Leaf packages via overlay
-
-Pure callPackage-style packages live in `nix/packages/<name>/default.nix` and
-are auto-injected via `nix/overlay.nix`:
-
-```nix
-# nix/overlay.nix
-final: _prev: {
-  my-tool = final.callPackage ./packages/my-tool { };
-}
-```
-
-Packages that need per-invocation arguments (commit hash, build-time env)
-stay in the top-level `default.nix` — overlays are for things that
-legitimately belong on `pkgs`.
-
-## Shared env vars
-
-Define a single `nix/env.nix` returning an attrset; both the build derivation
-and the devShell spread it into their `env`. This prevents drift between
-`nix build` and `nix develop`.
-
-```nix
-# nix/env.nix
-{ pkgs }: {
-  MY_TOOL_DIR = pkgs.my-tool;
-  MY_GH_BIN   = "${pkgs.gh}/bin/gh";
-}
-```
+`nix/nixpkgs.nix` imports the npins source and applies `nix/overlay.nix`;
+leaf packages and shared env vars follow fixed patterns — copy them from
+[references/nix-files.md](references/nix-files.md) (nixpkgs.nix, overlay.nix,
+env.nix, and when each applies).
 
 ## devShell conventions
 
@@ -167,41 +128,15 @@ roots with the `nix-gc-direnv` skill.
 
 Module integration tests (home-manager, NixOS, Darwin) genuinely need
 `flake-parts`-style inputs. Keep those inputs out of the top-level flake by
-nesting a sub-flake under `nix/<name>/flake.nix`. CI builds it with
-`--override-input` pointing back at the parent:
-
-```nix
-# nix/home/example/flake.nix
-{
-  inputs = {
-    self_pkg.url     = "github:owner/repo";   # parent; CI passes --override-input
-    nixpkgs.url      = "github:nixos/nixpkgs/nixpkgs-unstable";
-    home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
-  };
-  outputs = { nixpkgs, home-manager, self_pkg, ... }: {
-    # nixosConfigurations / checks that exercise self_pkg modules
-  };
-}
-```
-
-Users running `nix develop` / `nix run` on the top-level flake never evaluate
-this graph. Only CI does.
+nesting a sub-flake under `nix/<name>/flake.nix`; only CI evaluates it. For
+the sub-flake template and `--override-input` wiring, read
+[references/sub-flakes.md](references/sub-flakes.md).
 
 ## Language notes
 
-- **Python**: keep Python out of the flake. Provide `uv` in the devShell and
-  manage the interpreter and dependencies with uv (`uv python`, `uv sync`,
-  `uv run`).
-- **Go**: provide `go` (and `gopls`, `golangci-lint`) via the devShell;
-  module deps stay in `go.mod`.
-- **Dev services** (server + watcher + db): use
-  [`process-compose-flake`](https://github.com/Platonic-Systems/process-compose-flake)
-  and [`services-flake`](https://github.com/juspay/services-flake) via their
-  **standalone** entry points (no flake-parts needed). Both have zero inputs
-  themselves, so pinning them via npins keeps the top-level `flake.nix`
-  zero-input too. Reference:
-  [`services-flake/example/without-flake-parts`](https://github.com/juspay/services-flake/tree/main/example/without-flake-parts).
+For per-language recommendations (Python via uv, Go toolchain, dev services
+via process-compose-flake/services-flake without flake-parts), read
+[references/language-notes.md](references/language-notes.md).
 
 ## When simplicity wins
 
