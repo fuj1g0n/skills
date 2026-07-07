@@ -219,12 +219,74 @@ it emerged from both vendors independently within weeks (CLI v1.0.22
 behind it. User-global unification has demand (#146, #3019,
 community#187954) but no committed direction on either side.
 
-## 7. Cross-cutting conclusion
+## 7. GitHub Copilot App (desktop) and Copilot cloud agent
+
+Surveyed same day (2026-07-07).
+
+### Copilot App (desktop; GA 2026-06-17)
+
+The GitHub Copilot app (macOS/Windows/Linux, gh.io/app; technical preview
+at Build 2026, GA per github.blog changelog 2026-06-17) is built on the
+same runtime as Copilot CLI and **has no MCP config surface of its own**.
+Official customization docs
+(docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app):
+
+> "Any MCP servers configured for your repositories or Copilot CLI are
+> automatically available in the GitHub Copilot app. You can also add and
+> manage additional MCP servers in the app settings under **MCP Servers**."
+
+— and the page delegates to the CLI's MCP docs. So the App inherits both
+axes from the CLI: user-global `~/.copilot/mcp-config.json` and workspace
+`.mcp.json` / `.github/mcp.json`. Whether the in-app "MCP Servers" GUI
+writes to `~/.copilot/mcp-config.json` or an app-private store is not
+documented (inferred: the shared file). Enterprise policy treats the App
+under the "Copilot CLI" policy toggle; the MCP-management supported-surface
+table does not list the App separately.
+
+APM v0.23.1 has experimental `copilot-app`/`copilot-cowork` integration,
+but it only syncs workflows/prompts into the App's SQLite/WS-IPC surface
+(`integration/copilot_app_*.py`); it contains no MCP handling at all
+(verified by source grep).
+
+### Copilot cloud agent / code review (GitHub.com)
+
+Configured **only** via repository Settings → Copilot → MCP servers
+(JSON with `mcpServers` key entered in the UI; shared by cloud agent and
+code review; GitHub + Playwright MCP enabled by default; secrets must be
+prefixed `COPILOT_MCP_`; OAuth-based remote servers unsupported). It reads
+no filesystem config — neither `.mcp.json` nor `~/.copilot/`.
+Source: docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/configure-mcp-servers
+(fetched directly 2026-07-07).
+
+## 8. Full matrix: tool × scope (as of 2026-07-07)
+
+| Tool | Per-project | User-global |
+|---|---|---|
+| Copilot CLI (≥1.0.61) | `.mcp.json` (root, priority over) `.github/mcp.json`; folder-trust gated | `~/.copilot/mcp-config.json` |
+| Copilot App (GA 2026-06-17) | inherits CLI workspace files for connected repos | inherits `~/.copilot/mcp-config.json`; plus in-app Settings > MCP Servers GUI |
+| VS Code | `.vscode/mcp.json` (documented) and root `.mcp.json` (discovery, since 1.118); trust-on-nonce | profile-level user `mcp.json` (`servers` key); discovery of Claude Desktop/Windsurf/Cursor only |
+| Copilot cloud agent / code review | — (repository *settings*, not files) | — |
+| APM copilot target (0.23.1) | writes `.vscode/mcp.json` only (until #2047: `.mcp.json`) | `apm install -g` → `~/.copilot/mcp-config.json` |
+
+Cross-tool overlap per scope:
+
+* **Per-project**: root `.mcp.json` is read by Copilot CLI, Copilot App
+  (via CLI runtime), VS Code (discovery), and Claude Code — the single
+  shared location.
+* **User-global**: `~/.copilot/mcp-config.json` covers Copilot CLI *and*
+  Copilot App, but VS Code cannot read it (section 5) and nothing covers
+  VS Code + the GitHub tools together.
+* Cloud agent stands alone (server-side settings UI).
+
+## 9. Cross-cutting conclusion
 
 A single project-root `.mcp.json` in Claude-style `{"mcpServers": {...}}`
-format is readable by Copilot CLI (≥1.0.12), VS Code (≥2026-04-23 stable),
-and Claude Code, is gated by folder/workspace trust in both GitHub tools,
-and is the exact file APM's accepted roadmap (#2047) will manage for the
-copilot target. `.github/mcp.json` is Copilot-CLI-only and second in the
-loading priority; `.vscode/mcp.json` is VS-Code-only and no longer read by
-Copilot CLI (since v1.0.22).
+format is readable by Copilot CLI (≥1.0.12), the Copilot App (via the CLI
+runtime), VS Code (≥2026-04-23 stable), and Claude Code, is gated by
+folder/workspace trust in the GitHub tools, and is the exact file APM's
+accepted roadmap (#2047) will manage for the copilot target.
+`.github/mcp.json` is Copilot-CLI/App-only and second in the loading
+priority; `.vscode/mcp.json` is VS-Code-only and no longer read by Copilot
+CLI (since v1.0.22). At user-global scope no location spans VS Code and
+the GitHub CLI/App family; `~/.copilot/mcp-config.json` spans CLI + App
+only. The cloud agent is configured exclusively in repository settings.
