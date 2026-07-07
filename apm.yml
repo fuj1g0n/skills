@@ -1,6 +1,6 @@
 name: skills
 version: 1.0.0
-description: Personal agent skills for fuj1g0n (Nix environment, APM-based skill management)
+description: Agent skills reproducing fuj1g0n's dev environment and process, plus the ADRs and research behind them
 author: fuj1g0n
 dependencies:
   apm:

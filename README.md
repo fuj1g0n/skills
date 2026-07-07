@@ -1,7 +1,15 @@
 # skills
 
-Personal agent skills for @fuj1g0n, deployed user-wide via
+Home for everything involved in developing agent skills that reproduce
+@fuj1g0n's development environment and process: the research
+([docs/research/](docs/research/)), the decisions ([docs/adr/](docs/adr/)),
+and the resulting skills (`.apm/skills/`), which are the deliverables.
+Skills are deployed user-wide via
 [Microsoft APM](https://github.com/microsoft/apm) to `~/.agents/skills/`.
+
+Not every investigation yields a skill — rejected decisions (e.g. ADR-0008)
+are kept as records; accepted environment decisions are expected to
+eventually materialize as skills.
 
 ## Skills
 
@@ -69,3 +77,10 @@ format, see ADR-0004):
 - [0005](docs/adr/0005-adr-skill-sourcing.md) — Author an original `adr` skill adapted from MIT-licensed sources
 - [0006](docs/adr/0006-manage-adr-research-material.md) — Manage ADR research material with a three-tier rule (embed, snapshot, or link)
 - [0007](docs/adr/0007-author-original-skill-authoring-skill.md) — Author an original `skill-authoring` skill combining audited upstream practices
+- [0008](docs/adr/0008-windows-hello-for-wsl-sudo.md) — Windows Hello authentication for sudo inside WSL (rejected)
+- [0009](docs/adr/0009-per-project-mcp-config-via-root-mcp-json.md) — Use project-root `.mcp.json` for per-project MCP configuration
+
+## Research
+
+Immutable research snapshots backing the ADRs (per ADR-0006) live in
+[docs/research/](docs/research/) as `YYYY-MM-DD-topic.md`.
