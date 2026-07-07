@@ -1,16 +1,19 @@
-# ADR 0003: Curated skill set for development process and environment setup (external landscape survey)
+---
+status: accepted
+date: 2026-07-02
+decision-makers: "@fuj1g0n (with GitHub Copilot CLI)"
+---
 
-- Status: Accepted
-- Date: 2026-07-02 (survey and adoption), recorded 2026-07-06
-- Deciders: @fuj1g0n (with GitHub Copilot CLI)
+# Curate the development-environment skill set from an external landscape survey
 
-## Context
+## Context and Problem Statement
 
-Before authoring skills from scratch, the external ecosystem was surveyed
-for skills that enforce the local policy — "user-level environment via
-`nix profile`, repository-level environment via flake devShell + direnv,
-no ad-hoc global installs" — and for skills that govern skill management
-itself.
+Before authoring skills from scratch, the external ecosystem was surveyed for
+skills that enforce the local policy — "user-level environment via
+`nix profile`, repository-level environment via flake devShell + direnv, no
+ad-hoc global installs" — and for skills that govern skill management itself.
+For each useful upstream skill, how should it be brought into this
+repository?
 
 ### Survey: Nix environment skills
 
@@ -37,29 +40,39 @@ operational skills; together they cover the full policy.
 | `skill-selector` (+ `skill-finder`, compact `apm-usage`) | mizchi/skills (`meta/skill-selector`) | Meta skill for disciplined APM-based adoption: two-phase selection (curated catalog → search/evaluate), "no impulsive installs", "every skill costs context per conversation", full SHA/tag pinning, `apm install -g` for global scope. **Repository has no license.** |
 | `skill-creator` / `skill-maintenance` | ryoppippi/dotfiles | Authoring/maintenance of skills themselves; APM-independent, complementary. |
 
-## Decision
+## Considered Options
 
-- **Fork and adapt** the five Nix skills into this repository
-  (`nix-manager`, `nix-for-dev`, `missing-tools`, `nix-github-rate-limit`,
-  `nix-gc-direnv`), rebuilt faithfully from their reference sources and
-  adjusted for this environment (Determinate Nix, WSL2, uv, just, direnv).
-- **Re-export** the official `microsoft/apm/packages/apm-guide`
-  (`apm-usage`) as an APM dependency, unmodified (see ADR 0002).
-- **Author an original** `skill-management` skill for the operational
-  rules. mizchi's `skill-selector` is unlicensed, so its text was not
-  copied; only concepts informed an independent write-up.
-- Adoption criteria going forward (encoded in `skill-management`):
-  recurring need only, read the SKILL.md before installing, check the
-  license, prefer fork-and-adapt when environment-specific customization is
-  needed and direct APM dependency for well-maintained upstreams used as-is.
+* Fork-and-adapt into this repository (rewrite for this environment)
+* Direct APM dependency (re-export as-is, see [ADR-0002](0002-apm-package-layout-and-reexport.md))
+* Write an original skill (concepts only, no text copied)
 
-## Consequences
+## Decision Outcome
 
-- The installed user-global set stays small and policy-aligned
+Chosen option: all three, applied per skill by license and customization
+need:
+
+* **Fork and adapt** the five Nix skills (`nix-manager`, `nix-for-dev`,
+  `missing-tools`, `nix-github-rate-limit`, `nix-gc-direnv`), rebuilt
+  faithfully from their reference sources and adjusted for this environment
+  (Determinate Nix, WSL2, uv, just, direnv).
+* **Re-export** the official `microsoft/apm/packages/apm-guide` (`apm-usage`)
+  as an APM dependency, unmodified.
+* **Author an original** `skill-management` skill for the operational rules:
+  mizchi's `skill-selector` is unlicensed, so its text was not copied; only
+  concepts informed an independent write-up.
+
+Adoption criteria going forward (encoded in `skill-management`): recurring
+need only, read the SKILL.md before installing, check the license, prefer
+fork-and-adapt when environment-specific customization is needed and direct
+APM dependency for well-maintained upstreams used as-is.
+
+### Consequences
+
+* Good, because the installed user-global set stays small and policy-aligned
   (context cost per conversation is bounded).
-- Forked skills do not auto-track upstream; upstream changes must be
-  reviewed and merged manually.
-- The unlicensed-upstream rule (depend or rewrite, never copy) protects the
-  repository's licensing hygiene.
-- This survey is a point-in-time snapshot (2026-07); the ecosystem moves
-  fast and should be re-surveyed when new needs arise.
+* Good, because the unlicensed-upstream rule (depend or rewrite, never copy)
+  protects the repository's licensing hygiene.
+* Bad, because forked skills do not auto-track upstream; upstream changes
+  must be reviewed and merged manually.
+* Bad, because the survey is a point-in-time snapshot (2026-07); the
+  ecosystem moves fast and should be re-surveyed when new needs arise.
