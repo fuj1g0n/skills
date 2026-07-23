@@ -1,0 +1,31 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "skills",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "mounts": [
+    "source=nix-store-${devcontainerId},target=/nix,type=volume"
+  ],
+  "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+  "waitFor": "postCreateCommand",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "direnv.restart.automatic": true,
+        "nix.enableLanguageServer": true,
+        "nix.serverPath": "nil",
+        "nix.serverSettings": {
+          "nil": {
+            "formatting": {
+              "command": ["nixfmt"]
+            }
+          }
+        }
+      },
+      "extensions": [
+        "jnoortheen.nix-ide",
+        "mkhl.direnv"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
