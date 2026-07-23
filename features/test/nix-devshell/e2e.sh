@@ -35,6 +35,17 @@ fi
 # the bind-mounted workspace.
 chmod -R a+rX "${WORKSPACE}"
 
+# Real consuming repositories are git repositories, and the workspace owner
+# (host UID) generally differs from the container user; make the fixture a
+# git repo so the e2e exercises git's/nix's ownership check against the
+# Feature's safe.directory handling.
+git -C "${WORKSPACE}" init -q
+git -C "${WORKSPACE}" -c user.name=e2e -c user.email=e2e@example.invalid \
+  add -A
+git -C "${WORKSPACE}" -c user.name=e2e -c user.email=e2e@example.invalid \
+  commit -qm fixture
+chmod -R a+rX "${WORKSPACE}/.git"
+
 up() {
   devcontainer up --workspace-folder "${WORKSPACE}" "$@"
 }

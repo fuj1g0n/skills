@@ -144,6 +144,14 @@ if ! grep -q "direnv hook bash" ~/.bashrc; then
   echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
 fi
 
+# Bind mounts on some hosts (WSL wslc, CI runners with a non-1000 UID)
+# present the workspace as owned by a different user; git — and nix's
+# libgit2 flake fetcher — then refuses the repository ("repository path
+# is not owned by current user"). Trust exactly this workspace.
+if [ -e .git ]; then
+  git config --global --add safe.directory "$(pwd)"
+fi
+
 # Build the devShell now so the first terminal is instant (only when the
 # project provides a flake; the devcontainer itself does not require one).
 # Run it in a subprocess instead of eval'ing print-dev-env into this
