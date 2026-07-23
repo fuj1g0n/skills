@@ -130,13 +130,19 @@ Rejection of the alternatives, from the research:
 
 ### Confirmation
 
-Before acceptance, prototype and verify in a consuming repository with a
-flake.nix: (1) `devcontainer.json` referencing only the base image and
-the Feature yields a working environment — devShell tools on PATH,
-nil/nixfmt working in VS Code, direnv activation; (2) volume reuse
-across container rebuilds still skips reinstall via the bootstrap
-manifest; (3) a Feature version bump against an existing volume behaves
-correctly (manifest fallback reinstalls; no dangling profile);
+Items (1), (2), and (4) are verified continuously; (3) remains open.
+(1) and (2) are covered by a CI E2E test
+(`.github/workflows/features.yml`, `features/test/nix-devshell/e2e.sh`)
+that gates every publish: using the devcontainer CLI against a
+flake.nix fixture repository whose `devcontainer.json` references only
+the base image and the Feature, it asserts a working environment —
+Nix installed at create time, devShell tools on PATH, direnv hooked
+and allowed, the project devShell warmed up — and then re-creates the
+container against the same `/nix` volume, asserting the bootstrap
+manifest skips reinstall while the devShell still works (first green
+run: 30012414419). (3) a Feature version bump against an existing
+volume (manifest fallback reinstalls; no dangling profile) is not yet
+covered by the E2E test and must be verified before acceptance.
 (4) anonymous consumption works — verified by the publish PoC
 (workflow run 30011517328): tags 0 / 0.0 / 0.0.1 / latest published to
 `ghcr.io/fuj1g0n/skills/nix-devshell`, manifest carries the
