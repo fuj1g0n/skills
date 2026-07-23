@@ -130,7 +130,7 @@ Rejection of the alternatives, from the research:
 
 ### Confirmation
 
-Items (1), (2), and (4) are verified continuously; (3) remains open.
+All four items are verified.
 (1) and (2) are covered by a CI E2E test
 (`.github/workflows/features.yml`, `features/test/nix-devshell/e2e.sh`)
 that gates every publish: using the devcontainer CLI against a
@@ -141,8 +141,11 @@ and allowed, the project devShell warmed up — and then re-creates the
 container against the same `/nix` volume, asserting the bootstrap
 manifest skips reinstall while the devShell still works (first green
 run: 30012414419). (3) a Feature version bump against an existing
-volume (manifest fallback reinstalls; no dangling profile) is not yet
-covered by the E2E test and must be verified before acceptance.
+volume is also covered by the E2E test: a bumped Feature against a
+volume with a valid bootstrap manifest reuses it with no dangling
+`~/.nix-profile` and working tools, and a corrupted manifest falls
+back to the pinned installer, repairs the environment, and rewrites
+the manifest with valid store paths.
 (4) anonymous consumption works — verified by the publish PoC
 (workflow run 30011517328): tags 0 / 0.0 / 0.0.1 / latest published to
 `ghcr.io/fuj1g0n/skills/nix-devshell`, manifest carries the
