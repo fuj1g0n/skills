@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E2E test for the nix-devshell Feature (ADR-0015 Confirmation 1-2).
+# E2E test for the nix-devshell Feature (ADR-0015 Confirmation 1-3).
 # Simulates a consuming repository: a fixture workspace whose
 # devcontainer.json references only a base image and the Feature, brought
 # up with the devcontainer CLI. Run from the repository root.
@@ -13,7 +13,7 @@ set -euo pipefail
 FIXTURE_SRC=features/test/nix-devshell/fixture
 FEATURE_REF="${FEATURE_REF:-}"
 WORKSPACE=$(mktemp -d)
-trap 'docker rm -f "${CONTAINER_ID:-}" > /dev/null 2>&1 || true; rm -rf "${WORKSPACE}"' EXIT
+trap 'docker rm -f "${CONTAINER_ID:-}" > /dev/null 2>&1 || true; docker volume rm "${NIX_VOLUME:-}" > /dev/null 2>&1 || true; rm -rf "${WORKSPACE}"' EXIT
 
 # Stage the fixture outside the repo so the workspace looks like an
 # independent consuming repository.
@@ -77,5 +77,46 @@ grep -q "Reusing existing /nix volume" /tmp/up-second.log
 
 echo "--- tools still on PATH after profile rebuild"
 exec_in 'command -v nix direnv nil nixfmt && nix develop --command hello'
+
+echo "=== Confirmation (3): Feature version bump against the existing volume ==="
+if [ -z "${FEATURE_REF}" ]; then
+  # Simulate publishing a new Feature version: bump the version and touch
+  # the payload so the Feature layer genuinely differs from the one that
+  # created the volume.
+  sed -i 's/"version": "[^"]*"/"version": "99.0.0"/' \
+    "${WORKSPACE}/.devcontainer/nix-devshell/devcontainer-feature.json"
+  echo "# simulated version bump marker" \
+    >> "${WORKSPACE}/.devcontainer/nix-devshell/setup.sh"
+fi
+
+# The named /nix volume survives; capture it before dropping the container.
+NIX_VOLUME=$(docker inspect "${CONTAINER_ID}" \
+  --format '{{range .Mounts}}{{if eq .Destination "/nix"}}{{.Name}}{{end}}{{end}}')
+docker rm -f "${CONTAINER_ID}" > /dev/null
+
+up --remove-existing-container 2>&1 | tee /tmp/up-bump.log
+CONTAINER_ID=$(docker ps -q --filter "label=devcontainer.local_folder=${WORKSPACE}")
+
+echo "--- valid manifest is reused across the bump (no reinstall)"
+grep -q "Reusing existing /nix volume" /tmp/up-bump.log
+! grep -q "Installing Nix" /tmp/up-bump.log
+
+echo "--- profile is not dangling and tools work"
+exec_in 'readlink -e ~/.nix-profile > /dev/null'
+exec_in 'command -v nix direnv nil nixfmt && nix develop --command hello'
+
+echo "--- corrupt manifest falls back to the installer and repairs"
+docker rm -f "${CONTAINER_ID}" > /dev/null
+docker run --rm -u 1000:1000 -v "${NIX_VOLUME}:/nix" alpine \
+  sh -c 'echo /nix/store/00000000000000000000000000000000-gone > /nix/.bootstrap-paths'
+up --remove-existing-container 2>&1 | tee /tmp/up-fallback.log
+CONTAINER_ID=$(docker ps -q --filter "label=devcontainer.local_folder=${WORKSPACE}")
+grep -q "Installing Nix" /tmp/up-fallback.log
+exec_in 'readlink -e ~/.nix-profile > /dev/null'
+exec_in 'command -v nix direnv nil nixfmt && nix develop --command hello'
+
+echo "--- manifest was rewritten with valid store paths"
+docker run --rm -u 1000:1000 -v "${NIX_VOLUME}:/nix" alpine \
+  sh -c 'grep -q "^/nix/store/" /nix/.bootstrap-paths && ! grep -q "gone" /nix/.bootstrap-paths'
 
 echo "=== E2E test passed ==="
