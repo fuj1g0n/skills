@@ -6,6 +6,7 @@
     "source=nix-store-${devcontainerId},target=/nix,type=volume"
   ],
   "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+  "waitFor": "postCreateCommand",
   "customizations": {
     "vscode": {
       "settings": {

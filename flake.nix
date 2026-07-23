@@ -31,6 +31,7 @@
         direnv = pkgs.direnv;
         nix-direnv = pkgs.nix-direnv;
         nil = pkgs.nil;
+        nixfmt = pkgs.nixfmt;
       });
     };
 }

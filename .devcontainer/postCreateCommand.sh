@@ -14,10 +14,21 @@ if [ "$(id -un)" != "vscode" ] || [ "$(id -u)" != "1000" ]; then
   exit 1
 fi
 
+# Upstream nix.sh silently does nothing when $USER is unset (its first line
+# guards on both HOME and USER), and lifecycle scripts are not guaranteed a
+# login environment. Pin it explicitly.
+export USER="${USER:-$(id -un)}"
+
 # Pinned upstream Nix installer (hash-verified; the script embeds per-arch
 # tarball sha256s, so verification chains through to the Nix tarball).
 NIX_VERSION=2.31.2
 NIX_INSTALLER_SHA256=078e2ffeddf6a9c1f22adf41458ccc46a58bb26911a9e01579645314f9982994
+
+# Store paths of the bootstrap profile (nix + cacert), recorded inside the
+# /nix volume so a rebuilt container can restore the user profile offline
+# and deterministically (the user profile lives under $HOME and is lost on
+# container re-creation; the store survives in the volume).
+BOOTSTRAP_MANIFEST=/nix/.bootstrap-paths
 
 # The /nix volume mount point is created root-owned; hand it to the container
 # user once (non-recursive, O(1)). This is the only step that needs root:
@@ -27,19 +38,19 @@ if [ ! -w /nix ]; then
 fi
 
 if [ ! -e ~/.nix-profile ]; then
-  # In single-user mode the nix CLI lives in the user profile, which sits
-  # under $HOME and is lost when the container is rebuilt. The store in the
-  # /nix volume survives, so rebuild the profile from it without network.
-  nix_pkg=$(compgen -G "/nix/store/*-nix-${NIX_VERSION}" | head -n1 || true)
-  if [ -n "${nix_pkg}" ]; then
+  if [ -f "${BOOTSTRAP_MANIFEST}" ]; then
+    # Reused /nix volume: rebuild the user profile from the exact store
+    # paths recorded at install time (no network, no globbing heuristics).
     echo "Reusing existing /nix volume; rebuilding user profile from the store..."
-    cacert_pkg=$(compgen -G "/nix/store/*-nss-cacert-*" | grep -v '\.drv$' | head -n1)
-    "${nix_pkg}/bin/nix-env" -i "${nix_pkg}" "${cacert_pkg}"
+    mapfile -t bootstrap_paths < "${BOOTSTRAP_MANIFEST}"
+    "${bootstrap_paths[0]}/bin/nix-env" -i "${bootstrap_paths[@]}"
   else
-    # Fresh /nix volume: run the pinned upstream installer as vscode.
+    # Fresh /nix volume (or a volume from a pre-manifest script version):
+    # run the pinned upstream installer as vscode. It tolerates an existing
+    # /nix, copying missing store paths and rebuilding the profile.
     # --no-daemon: single-user mode; the invoking user owns the store.
     echo "Installing Nix ${NIX_VERSION} (single-user)..."
-    curl --proto '=https' --tlsv1.2 -fsSL \
+    curl --proto '=https' --tlsv1.2 -fsSL --retry 3 \
       "https://releases.nixos.org/nix/nix-${NIX_VERSION}/install" \
       -o /tmp/nix-install.sh
     echo "${NIX_INSTALLER_SHA256}  /tmp/nix-install.sh" | sha256sum -c -
@@ -47,6 +58,13 @@ if [ ! -e ~/.nix-profile ]; then
     rm /tmp/nix-install.sh
   fi
 fi
+
+# Record the bootstrap store path for the next container re-creation
+# (idempotent; resolved through the profile symlink, so always current).
+# The single-user installer puts only the nix package in the profile;
+# TLS certs come from the base image via nix.sh's /etc/ssl fallback.
+nix_bin=$(readlink -f ~/.nix-profile/bin/nix)
+echo "${nix_bin%/bin/nix}" > "${BOOTSTRAP_MANIFEST}"
 
 # User-level Nix configuration ($HOME is ephemeral, so written idempotently).
 # - flakes are still experimental in upstream Nix;
@@ -69,27 +87,28 @@ if ! grep -q "nix.sh" ~/.bashrc; then
   echo '[ -e ~/.nix-profile/etc/profile.d/nix.sh ] && . ~/.nix-profile/etc/profile.d/nix.sh' >> ~/.bashrc
 fi
 
-# Install direnv/nix-direnv/nil user-wide from this flake (pinned by
-# flake.lock). direnv cannot live only in the devShell: it must exist before
-# the shell loads.
+# Install direnv/nix-direnv user-wide from this flake (pinned by flake.lock).
+# direnv cannot live only in the devShell: it must exist before the shell
+# loads (bootstrap problem).
 echo "Installing global packages via Nix profile..."
 if ! command -v direnv > /dev/null 2>&1; then
   nix profile add .#direnv .#nix-direnv
 fi
-# nil is user-wide because the VS Code Nix extension does not see the direnv env.
+# nil and nixfmt are user-wide as a pair: the VS Code Nix extension launches
+# nil outside the direnv environment, and nil in turn spawns nixfmt (see
+# nix.serverSettings in devcontainer.json), so both must resolve without the
+# devShell on PATH.
 if ! command -v nil > /dev/null 2>&1; then
-  nix profile add .#nil
+  nix profile add .#nil .#nixfmt
 fi
 
-# nix-direnv: cache devShell evaluation for fast direnv loads.
-if [ ! -f ~/.config/direnv/direnvrc ] || ! grep -q "nix-direnv" ~/.config/direnv/direnvrc; then
-  echo "Configuring nix-direnv..."
-  mkdir -p ~/.config/direnv
-  cat >> ~/.config/direnv/direnvrc <<'DIRENVRC'
+# nix-direnv: cache devShell evaluation for fast direnv loads
+# ($HOME is ephemeral, so written idempotently).
+mkdir -p ~/.config/direnv
+cat > ~/.config/direnv/direnvrc <<'DIRENVRC'
 # Use nix-direnv for cached `use flake`.
 source $HOME/.nix-profile/share/nix-direnv/direnvrc
 DIRENVRC
-fi
 
 # shellcheck disable=SC2016
 if ! grep -q "direnv hook bash" ~/.bashrc; then
@@ -97,9 +116,11 @@ if ! grep -q "direnv hook bash" ~/.bashrc; then
   echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
 fi
 
-# Build the devShell now so the first terminal is instant.
+# Build the devShell now so the first terminal is instant. Run it in a
+# subprocess instead of eval'ing print-dev-env into this script, which
+# would leak the devShell environment (PATH etc.) into the remaining steps.
 echo "Building Nix development environment..."
-eval "$(nix print-dev-env)"
+nix develop --command true
 
 echo "Allowing direnv for future shell sessions..."
 direnv allow
