@@ -104,8 +104,12 @@ for the detailed investigation.
 Of the implementation outline, the installer selection (Determinate Nix
 Installer + root install + chown + `/etc/nix` restore) was superseded by
 [ADR-0012](0012-use-upstream-installer-single-user-mode.md) (upstream
-official installer in single-user mode). The core decision (Approach 1)
-remains in effect.
+official installer in single-user mode). The "centralize tool definitions
+in flake.nix" driver was narrowed by
+[ADR-0013](0013-devcontainer-self-contained-tool-provisioning.md): tools
+required by the devcontainer's own VS Code configuration are provisioned
+from a nixpkgs pinned in postCreateCommand.sh, not from the project
+flake. The core decision (Approach 1) remains in effect.
 
 * [Distributing a secure, highly reproducible development environment by combining Nix Flakes and Dev Containers (Qiita)](https://qiita.com/sigma_devsecops/items/8c33553be0f123413c41) — comparative verification of Approach 1 / Approach 2.
 * [Building a Nix Flake environment on a DevContainer (ncaq)](https://www.ncaq.net/2026/01/16/14/18/49/) — implementation details of Approach 1 (postCreateCommand.sh, nix-direnv, Cachix netrc, etc.).

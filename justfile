@@ -1,9 +1,9 @@
 default:
     @just --list
 
-# Format Nix files
+# Format Nix files (npins/ is generated, not formatted)
 fmt:
-    nixfmt flake.nix
+    nixfmt flake.nix shell.nix nix/*.nix
 
 # Lint Markdown files
 lint:

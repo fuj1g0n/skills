@@ -24,10 +24,19 @@ export USER="${USER:-$(id -un)}"
 NIX_VERSION=2.31.2
 NIX_INSTALLER_SHA256=078e2ffeddf6a9c1f22adf41458ccc46a58bb26911a9e01579645314f9982994
 
-# Store path of the bootstrap Nix, recorded inside the /nix volume so a
-# rebuilt container can restore the user profile offline and
-# deterministically (the user profile symlink lives under $HOME and is lost
-# on container re-creation; the store survives in the volume).
+# Editor/bootstrap tools required by devcontainer.json (nil + nixfmt for the
+# Nix IDE extension, direnv + nix-direnv for devShell activation) are
+# supplied by the devcontainer itself from this pinned nixpkgs, NOT from the
+# project flake: the devcontainer must stay usable in repositories whose
+# flakes do not export these packages (ADR-0013).
+NIXPKGS_REV=421eebfd0ec7bccd4abe826ce62d7e6e83129493
+NIXPKGS_FLAKE="github:NixOS/nixpkgs/${NIXPKGS_REV}"
+
+# Store paths of the bootstrap profile (nix + editor/bootstrap tools),
+# recorded inside the /nix volume so a rebuilt container can restore the
+# user profile offline and deterministically (the user profile symlink
+# lives under $HOME and is lost on container re-creation; the store
+# survives in the volume).
 BOOTSTRAP_MANIFEST=/nix/.bootstrap-paths
 
 # The /nix volume mount point is created root-owned; hand it to the container
@@ -38,15 +47,23 @@ if [ ! -w /nix ]; then
 fi
 
 if [ ! -e ~/.nix-profile ]; then
-  bootstrap_nix=""
+  # Reuse is only attempted when every recorded store path still exists;
+  # an empty, corrupt, or GC'd manifest falls back to the installer.
+  bootstrap_ok=false
   if [ -f "${BOOTSTRAP_MANIFEST}" ]; then
-    bootstrap_nix=$(head -n 1 "${BOOTSTRAP_MANIFEST}")
+    mapfile -t bootstrap_paths < "${BOOTSTRAP_MANIFEST}"
+    if [ "${#bootstrap_paths[@]}" -gt 0 ] && [ -x "${bootstrap_paths[0]}/bin/nix-env" ]; then
+      bootstrap_ok=true
+      for p in "${bootstrap_paths[@]}"; do
+        [ -e "${p}" ] || bootstrap_ok=false
+      done
+    fi
   fi
-  if [ -n "${bootstrap_nix}" ] && [ -x "${bootstrap_nix}/bin/nix-env" ]; then
+  if [ "${bootstrap_ok}" = true ]; then
     # Reused /nix volume: rebuild the user profile from the exact store
-    # path recorded at install time (no network, no globbing heuristics).
+    # paths recorded at install time (no network, no globbing heuristics).
     echo "Reusing existing /nix volume; rebuilding user profile from the store..."
-    "${bootstrap_nix}/bin/nix-env" -i "${bootstrap_nix}"
+    "${bootstrap_paths[0]}/bin/nix-env" -i "${bootstrap_paths[@]}"
   else
     # Fresh /nix volume, a volume from a pre-manifest script version, or a
     # missing/corrupt manifest: run the pinned upstream installer as vscode.
@@ -62,13 +79,6 @@ if [ ! -e ~/.nix-profile ]; then
     rm /tmp/nix-install.sh
   fi
 fi
-
-# Record the bootstrap store path for the next container re-creation
-# (idempotent; resolved through the profile symlink, so always current).
-# The single-user installer puts only the nix package in the profile;
-# TLS certs come from the base image via nix.sh's /etc/ssl fallback.
-nix_bin=$(readlink -f ~/.nix-profile/bin/nix)
-echo "${nix_bin%/bin/nix}" > "${BOOTSTRAP_MANIFEST}"
 
 # User-level Nix configuration ($HOME is ephemeral, so written idempotently).
 # - flakes are still experimental in upstream Nix;
@@ -91,9 +101,11 @@ if ! grep -q "nix.sh" ~/.bashrc; then
   echo '[ -e ~/.nix-profile/etc/profile.d/nix.sh ] && . ~/.nix-profile/etc/profile.d/nix.sh' >> ~/.bashrc
 fi
 
-# Install user-wide packages from this flake (pinned by flake.lock), each
-# individually guarded so a partial previous state is repaired instead of
-# skipped (nix profile add errors on packages that are already installed).
+# Install user-wide tools from the devcontainer-pinned nixpkgs (ADR-0013),
+# each individually guarded so a partial previous state is repaired instead
+# of skipped (nix profile add errors on packages that are already
+# installed). On volume reuse the manifest rebuild above already provides
+# them, so these are no-ops.
 # - direnv/nix-direnv cannot live only in the devShell: they must exist
 #   before the shell loads (bootstrap problem).
 # - nil and nixfmt are user-wide as a pair: the VS Code Nix extension
@@ -101,10 +113,22 @@ fi
 #   nixfmt (see nix.serverSettings in devcontainer.json), so both must
 #   resolve without the devShell on PATH.
 echo "Installing global packages via Nix profile..."
-command -v direnv > /dev/null 2>&1 || nix profile add .#direnv
-[ -e ~/.nix-profile/share/nix-direnv/direnvrc ] || nix profile add .#nix-direnv
-command -v nil > /dev/null 2>&1 || nix profile add .#nil
-command -v nixfmt > /dev/null 2>&1 || nix profile add .#nixfmt
+command -v direnv > /dev/null 2>&1 || nix profile add "${NIXPKGS_FLAKE}#direnv"
+[ -e ~/.nix-profile/share/nix-direnv/direnvrc ] || nix profile add "${NIXPKGS_FLAKE}#nix-direnv"
+command -v nil > /dev/null 2>&1 || nix profile add "${NIXPKGS_FLAKE}#nil"
+command -v nixfmt > /dev/null 2>&1 || nix profile add "${NIXPKGS_FLAKE}#nixfmt"
+
+# Record the store paths of every bootstrap profile package for the next
+# container re-creation (idempotent; resolved through the profile symlinks,
+# so always current). The single-user installer puts only the nix package
+# in the profile; TLS certs come from the base image via nix.sh's /etc/ssl
+# fallback. bin/nix must stay first: the reuse path runs nix-env from the
+# first manifest line.
+{
+  for f in bin/nix bin/direnv share/nix-direnv/direnvrc bin/nil bin/nixfmt; do
+    readlink -f ~/.nix-profile/"${f}" | cut -d/ -f1-4
+  done
+} > "${BOOTSTRAP_MANIFEST}"
 
 # nix-direnv: cache devShell evaluation for fast direnv loads
 # ($HOME is ephemeral, so written idempotently).
@@ -120,13 +144,19 @@ if ! grep -q "direnv hook bash" ~/.bashrc; then
   echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
 fi
 
-# Build the devShell now so the first terminal is instant. Run it in a
-# subprocess instead of eval'ing print-dev-env into this script, which
-# would leak the devShell environment (PATH etc.) into the remaining steps.
-echo "Building Nix development environment..."
-nix develop --command true
+# Build the devShell now so the first terminal is instant (only when the
+# project provides a flake; the devcontainer itself does not require one).
+# Run it in a subprocess instead of eval'ing print-dev-env into this
+# script, which would leak the devShell environment (PATH etc.) into the
+# remaining steps.
+if [ -f flake.nix ]; then
+  echo "Building Nix development environment..."
+  nix develop --command true
+fi
 
-echo "Allowing direnv for future shell sessions..."
-direnv allow
+if [ -f .envrc ]; then
+  echo "Allowing direnv for future shell sessions..."
+  direnv allow
+fi
 
 echo "Setup complete!"
