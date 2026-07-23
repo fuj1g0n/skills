@@ -4,62 +4,108 @@ date: 2026-07-23
 decision-makers: "@fuj1g0n (with GitHub Copilot CLI)"
 ---
 
-# Dev Container 内で Nix Flake devShell を使う開発環境
+# Development environment using a Nix Flake devShell inside a Dev Container
 
 ## Context and Problem Statement
 
-本リポジトリの開発環境を Dev Container ベースにしたい。ユーザーのホスト環境は Nix を基盤としており(言語ランタイムは nix shell や flake devShell で one-shot 供給する方針)、コンテナ化後もこの Nix ベースの環境構築を維持したい。
+We want the development environment of this repository to be Dev
+Container based. The user's host environment is built on Nix (language
+runtimes are supplied one-shot via nix shell or flake devShells), and this
+Nix-based provisioning should be preserved after containerization.
 
-コンテナ化の動機は次の 2 点である。
+The motivations for containerizing are:
 
-* AI エージェントを自律実行させる際にホストから分離した環境で作業させたい。
-* 開発環境を再現性高く配布したい。
+* Run AI agents autonomously in an environment isolated from the host.
+* Distribute the development environment with high reproducibility.
 
-Nix と Dev Containers をどう組み合わせるかが問題となる。参考:
-[Nix Flake と Dev Containers を組み合わせる検証 (Qiita)](https://qiita.com/sigma_devsecops/items/8c33553be0f123413c41)、
-[DevContainer 上で Nix Flake 環境を構築する (ncaq)](https://www.ncaq.net/2026/01/16/14/18/49/)。
+The question is how to combine Nix with Dev Containers. References:
+[Combining Nix Flakes with Dev Containers (Qiita)](https://qiita.com/sigma_devsecops/items/8c33553be0f123413c41),
+[Building a Nix Flake environment on a DevContainer (ncaq)](https://www.ncaq.net/2026/01/16/14/18/49/).
 
 ## Decision Drivers
 
-* ホストからの分離: AI エージェントの自律実行やダウンロードしたファイルによるホスト汚染のリスク低減。
-* 再現性: flake.lock による commit/hash ベースの依存固定を、配布される環境でもそのまま活かす。
-* ホストの Nix ベース運用との一貫性: ツール定義を flake.nix に一元化し、コンテナ用に別途 Dockerfile でツールを管理しない。
+* Isolation from the host: reduce the risk of host contamination from
+  autonomous AI agent runs and downloaded files.
+* Reproducibility: carry the commit/hash-based dependency pinning of
+  flake.lock over to the distributed environment as-is.
+* Consistency with the host's Nix-based workflow: centralize tool
+  definitions in flake.nix; do not maintain a separate tool list in a
+  Dockerfile for the container.
 
 ## Considered Options
 
-* 方式1: 汎用 devcontainer イメージ内に Nix を postCreateCommand で導入し、/nix を volume で永続化する
-* 方式2: flake.nix の dockerTools でコンテナイメージ自体を Nix でビルドし、Dev Containers から接続する
-* ホストで直接 nix develop する現行運用の継続 (コンテナ化しない)
+* Approach 1: install Nix via postCreateCommand inside a generic
+  devcontainer image and persist /nix in a volume
+* Approach 2: build the container image itself with Nix (dockerTools in
+  flake.nix) and connect to it from Dev Containers
+* Keep the current workflow of running nix develop directly on the host
+  (no containerization)
 
 ## Decision Outcome
 
-Chosen option: "方式1: 汎用 devcontainer イメージ内に Nix を postCreateCommand で導入し、/nix を volume で永続化する", because 参考記事の検証で方式1 が実用に耐えると確認されており、VS Code Server が動作する公式 devcontainer イメージを使いつつ、ツール定義は flake.nix に一元化できる。方式2 は `nixos/nix` イメージ同様に Dev Containers 側の要件(VS Code Server の動作等)との摩擦が大きい。コンテナ化しない現行運用は分離のドライバーを満たせない。
+Chosen option: "Approach 1: install Nix via postCreateCommand inside a
+generic devcontainer image and persist /nix in a volume", because the
+referenced write-ups verified that Approach 1 works in practice, and it
+lets us use an official devcontainer image where the VS Code Server runs
+while keeping tool definitions centralized in flake.nix. Approach 2 has
+significant friction with Dev Containers requirements (VS Code Server
+operation etc.), just like the `nixos/nix` image. Staying uncontainerized
+fails the isolation driver.
 
-実装の要点 (参考記事の構成に従う):
+Implementation outline (following the referenced articles):
 
-* ベースイメージは `mcr.microsoft.com/devcontainers/base` 系の公式イメージ。
-* Nix はホストと同じ Determinate Nix を postCreateCommand で導入する。コンテナ内に systemd がないため Determinate Nix Installer の `--init none` プランナーを使い、`--nix-build-user-count 0` で build users を作らず、インストール後に `/nix` をコンテナユーザーに chown して single user (daemonless) で運用する。build users は root の daemon が sandbox ビルドに使うものであり、store を自ユーザー所有とする single user mode では daemon も build users も不要。sandbox はコンテナ自体が分離を提供するため `sandbox = false` とする。インストーラはバージョン固定し sha256 検証する。
-* `/nix` を named volume でマウントしてストアを永続化し、コンテナ再作成時の再ダウンロードを避ける。volume の外にある `/etc/nix` はコンテナ再作成時に volume 内バックアップから復元する。
-* direnv + nix-direnv で、シェル起動時に flake devShell が自動ロードされるようにする。direnv 自体は devShell に入れるだけでは機能しないため、nix profile でグローバルに導入する。
-* ツールは flake.nix の devShell で定義する。
+* Base image is an official `mcr.microsoft.com/devcontainers/base` image.
+* Nix is installed via postCreateCommand using the same Determinate Nix
+  as the host. Since the container has no systemd, use the Determinate
+  Nix Installer's `--init none` planner, create no build users with
+  `--nix-build-user-count 0`, and after installation chown `/nix` to the
+  container user to operate in single-user (daemonless) mode. Build users
+  are what the root daemon uses for sandboxed builds; in single-user mode
+  where the store is owned by the user, neither the daemon nor build
+  users are needed. Set `sandbox = false` because the container itself
+  provides isolation. Pin the installer version and verify its sha256.
+* Mount `/nix` as a named volume to persist the store and avoid
+  re-downloads on container re-creation. `/etc/nix` lives outside the
+  volume, so restore it from a backup kept inside the volume on container
+  re-creation.
+* Use direnv + nix-direnv so the flake devShell is loaded automatically
+  at shell startup. direnv itself does not work if merely put into the
+  devShell, so install it globally via nix profile.
+* Define tools in the flake.nix devShell.
 
 ### Consequences
 
-* Good, because ホストと分離された環境で AI エージェントを自律実行できる。
-* Good, because flake.lock により配布先でも同一の開発環境が再現される。
-* Good, because ツール定義が flake.nix に一元化され、Dockerfile 側での重複管理が不要。
-* Bad, because 初回のコンテナ作成時に Nix インストールと devShell ビルドが走り、立ち上げが遅い (/nix volume 永続化で 2 回目以降は緩和)。
-* Bad, because postCreateCommand のセットアップスクリプトが複雑になり、/nix volume 再利用時の /etc/nix 復元など Dev Container 固有の対処が必要。
-* Bad, because ホスト直接運用と比べレイヤーが増え、VS Code の非ログインシェル問題など debug 対象が増える。
+* Good, because AI agents can run autonomously in an environment isolated
+  from the host.
+* Good, because flake.lock reproduces the identical development
+  environment at distribution targets.
+* Good, because tool definitions are centralized in flake.nix with no
+  duplicate management in a Dockerfile.
+* Bad, because the first container creation runs the Nix install and
+  devShell build, making startup slow (mitigated from the second time on
+  by the persisted /nix volume).
+* Bad, because the postCreateCommand setup script becomes complex and
+  needs Dev Container-specific handling such as restoring /etc/nix when
+  the /nix volume is reused.
+* Bad, because compared to running directly on the host there are more
+  layers, and more things to debug such as VS Code's non-login-shell
+  issue.
 
 ### Confirmation
 
-devcontainer を作成 (Reopen in Container) し、ターミナルで flake devShell のツールが PATH に入っていること、コンテナ再作成後に /nix volume が再利用され再ダウンロードが発生しないことを確認する。
+Create the devcontainer (Reopen in Container) and confirm that the flake
+devShell tools are on PATH in a terminal, and that after container
+re-creation the /nix volume is reused with no re-downloading.
 
 ## More Information
 
-調査の詳細は [research snapshot](../research/2026-07-23-devcontainer-nix-installer.md) を参照。
-実装の要点のうちインストーラ選定 (Determinate Nix Installer + root インストール + chown + `/etc/nix` 復元) は [ADR-0012](0012-use-upstream-installer-single-user-mode.md) により置換された (upstream 公式インストーラ single-user モード)。中核決定 (方式1) は引き続き有効。
+See the [research snapshot](../research/2026-07-23-devcontainer-nix-installer.md)
+for the detailed investigation.
+Of the implementation outline, the installer selection (Determinate Nix
+Installer + root install + chown + `/etc/nix` restore) was superseded by
+[ADR-0012](0012-use-upstream-installer-single-user-mode.md) (upstream
+official installer in single-user mode). The core decision (Approach 1)
+remains in effect.
 
-* [Nix Flake と Dev Containers を組み合わせてセキュアで再現性の高い開発環境を配布したい (Qiita)](https://qiita.com/sigma_devsecops/items/8c33553be0f123413c41) — 方式1/方式2 の比較検証。
-* [DevContainer 上で Nix Flake 環境を構築する (ncaq)](https://www.ncaq.net/2026/01/16/14/18/49/) — 方式1 の実装詳細 (postCreateCommand.sh、nix-direnv、Cachix netrc 等)。
+* [Distributing a secure, highly reproducible development environment by combining Nix Flakes and Dev Containers (Qiita)](https://qiita.com/sigma_devsecops/items/8c33553be0f123413c41) — comparative verification of Approach 1 / Approach 2.
+* [Building a Nix Flake environment on a DevContainer (ncaq)](https://www.ncaq.net/2026/01/16/14/18/49/) — implementation details of Approach 1 (postCreateCommand.sh, nix-direnv, Cachix netrc, etc.).

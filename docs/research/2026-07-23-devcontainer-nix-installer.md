@@ -12,80 +12,94 @@ From the [Dev Container Specification](https://containers.dev/implementors/spec/
 [devcontainers/images src/base-ubuntu](https://github.com/devcontainers/images/tree/main/src/base-ubuntu)
 and [VS Code non-root user docs](https://github.com/microsoft/vscode-docs/blob/main/remote/advancedcontainers/add-nonroot-user.md):
 
-* devcontainer のユーザーは root 前提ではなく構成依存。
-  `mcr.microsoft.com/devcontainers/base:ubuntu-24.04` は common-utils feature
-  で非 root ユーザー `vscode` (UID/GID 1000、passwordless sudo) を作成し、
-  イメージメタデータで `remoteUser=vscode` を設定する。
-* lifecycle スクリプト (postCreateCommand 等) は `remoteUser` として実行。
-  未指定なら `containerUser`、それも無ければイメージ既定ユーザー。
-* `updateRemoteUserUID` (Linux では既定で有効) はコンテナ作成時に
-  remoteUser の UID/GID をホストユーザーに合わせて書き換え、chown するのは
-  home ディレクトリのみ。`/nix` など home 外は変更されない。
-  → ホスト UID ≠ 1000 では volume 内 store の所有 UID と実行 UID がずれる。
+* The devcontainer user is not assumed to be root; it is
+  configuration-dependent.
+  `mcr.microsoft.com/devcontainers/base:ubuntu-24.04` creates the
+  non-root user `vscode` (UID/GID 1000, passwordless sudo) via the
+  common-utils feature and sets `remoteUser=vscode` in the image
+  metadata.
+* Lifecycle scripts (postCreateCommand etc.) run as `remoteUser`. If
+  unset, `containerUser`; failing that, the image's default user.
+* `updateRemoteUserUID` (enabled by default on Linux) rewrites the
+  remoteUser's UID/GID to match the host user at container creation and
+  chowns only the home directory. Paths outside home such as `/nix` are
+  untouched.
+  → With host UID ≠ 1000, the owning UID of the store inside the volume
+  diverges from the executing UID.
 
-## 2. Nix インストールの 3 層 (backing ADR-0011)
+## 2. The three layers of a Nix installation (backing ADR-0011)
 
-「Nix のインストール先」は所有者と永続性の異なる 3 層に分かれる。
+The "Nix install destination" splits into three layers with different
+owners and persistence.
 
-| 層 | 配置 | 永続性 (/nix volume 構成時) |
+| Layer | Location | Persistence (with /nix volume) |
 |---|---|---|
-| store / db / gcroots | `/nix` | named volume で永続 |
-| システム設定 | `/etc/nix` 等 | コンテナ再作成で消失 |
-| user profile (`~/.nix-profile` → `~/.local/state/nix/profiles`) | `$HOME` | コンテナ再作成で消失 |
+| store / db / gcroots | `/nix` | persisted via named volume |
+| system configuration | `/etc/nix` etc. | lost on container re-creation |
+| user profile (`~/.nix-profile` → `~/.local/state/nix/profiles`) | `$HOME` | lost on container re-creation |
 
-single-user モード (ADR-0012) では `/etc/nix` 層が消滅し、nix CLI 自体が
-user profile 層に入るため、volume 再利用時は store から `nix-env -i` で
-profile を再構築する必要がある (store path は volume に残る。
-`/nix/var/nix/gcroots/auto` の旧 profile への symlink は dangling になるが、
-再構築で再登録されるため実害は無い)。
+In single-user mode (ADR-0012) the `/etc/nix` layer disappears, and the
+nix CLI itself lives in the user-profile layer, so on volume reuse the
+profile must be rebuilt from the store with `nix-env -i` (the store paths
+remain in the volume; the symlinks in `/nix/var/nix/gcroots/auto`
+pointing to the old profile become dangling, but the rebuild re-registers
+them, so there is no real harm).
 
-## 3. Determinate Nix Installer は root 強制 (backing ADR-0012)
+## 3. The Determinate Nix Installer enforces root (backing ADR-0012)
 
-* `src/cli/mod.rs` の `ensure_root()` が非 root 起動時に `sudo --set-home`
-  で自身を root として再実行する。回避不能。
-* サポートされるレイアウトは「root 所有 store + daemon + build users」の
-  multi-user モデルのみ。`--init none` は init 統合を省くだけで root-only
-  レイアウトであり、user 所有モードではない。
-* `--nix-build-user-count 0` は存在する (daemonless では build users 不要)。
-  `build-users-group` は既定名と異なる場合のみ nix.conf に書かれる。
-* 非 root / user 所有 single-user インストールは
-  [nix-installer#214](https://github.com/DeterminateSystems/nix-installer/issues/214)、
-  [nix-installer#1075](https://github.com/DeterminateSystems/nix-installer/issues/1075)
-  として数年 open のまま未実装。「root インストール後に `/nix` を chown」は
-  コミュニティ workaround であり、`determinate-nixd upgrade` 等の root 所有
-  前提の機能と整合しない off-label 利用。
+* `ensure_root()` in `src/cli/mod.rs` re-executes the installer as root
+  via `sudo --set-home` when started as non-root. Not avoidable.
+* The only supported layout is the multi-user model of "root-owned store
+  + daemon + build users". `--init none` merely skips init integration;
+  it is still a root-only layout, not a user-owned mode.
+* `--nix-build-user-count 0` exists (build users are unnecessary when
+  daemonless). `build-users-group` is written to nix.conf only when it
+  differs from the default name.
+* Non-root / user-owned single-user installation has been requested in
+  [nix-installer#214](https://github.com/DeterminateSystems/nix-installer/issues/214)
+  and
+  [nix-installer#1075](https://github.com/DeterminateSystems/nix-installer/issues/1075),
+  open for years and unimplemented. "chown `/nix` after a root install"
+  is a community workaround and is inconsistent with root-ownership-based
+  features such as `determinate-nixd upgrade` — i.e. off-label use.
 
-## 4. upstream 公式インストーラの single-user モード (backing ADR-0012)
+## 4. The upstream official installer's single-user mode (backing ADR-0012)
 
-* `sh install --no-daemon` は呼び出しユーザーとして実行され、store を
-  そのユーザー所有で構築する (公式サポート)。`/etc/nix` は作らない。
-* wrapper script (`releases.nixos.org/nix/nix-<ver>/install`) には
-  アーキテクチャ別 tarball の sha256 が埋め込まれており、script 自体を
-  ハッシュ pin すれば検証が tarball まで連鎖する。
-  2.31.2 の script sha256:
-  `078e2ffeddf6a9c1f22adf41458ccc46a58bb26911a9e01579645314f9982994`。
-* tarball 内の実体は `scripts/install-nix-from-tarball.sh` (NixOS/nix
-  2.31.2 で検証)。`/nix` が存在し書込可能ならそのまま使い、store paths を
-  コピーして `nix-env -i` で profile を作る。`--yes --no-channel-add
-  --no-modify-profile` を受け付ける。
-* upstream が single-user を非推奨とする理由は (a) ビルドが呼び出しユーザー
-  権限で走る、(b) build user 分離が無い、(c) ユーザー間で store を共有
-  できない ([Nix manual: Installation](https://nix.dev/manual/nix/2.29/installation/))。
-  いずれも「単一ユーザー・コンテナ自体が隔離境界」の devcontainer には
-  該当せず、むしろ「daemon を動かせない環境向け」という想定用途に
-  systemd の無い devcontainer が合致する。
-* flakes は upstream では experimental のため
-  `~/.config/nix/nix.conf` に `experimental-features = nix-command flakes`
-  が必要。sandbox は root か user namespaces を要するため
-  `sandbox = false` とする (コンテナが隔離を提供)。
-* `nix profile` は nix-env 形式の profile (`manifest.nix`) を読めて
-  初回書込時に新形式へ移行する (`src/nix/profile.cc` の ProfileManifest)。
-  インストーラの `nix-env -i` と postCreateCommand の `nix profile add`
-  の併用は成立する。
+* `sh install --no-daemon` runs as the invoking user and builds the store
+  owned by that user (officially supported). It does not create
+  `/etc/nix`.
+* The wrapper script (`releases.nixos.org/nix/nix-<ver>/install`) embeds
+  the per-architecture tarball sha256s, so hash-pinning the script itself
+  chains verification through to the tarball.
+  Script sha256 for 2.31.2:
+  `078e2ffeddf6a9c1f22adf41458ccc46a58bb26911a9e01579645314f9982994`.
+* The actual logic inside the tarball is
+  `scripts/install-nix-from-tarball.sh` (verified against NixOS/nix
+  2.31.2). If `/nix` exists and is writable it is used as-is; store paths
+  are copied and a profile is created with `nix-env -i`. It accepts
+  `--yes --no-channel-add --no-modify-profile`.
+* Upstream discourages single-user because (a) builds run with the
+  invoking user's privileges, (b) there is no build-user separation,
+  (c) the store cannot be shared between users
+  ([Nix manual: Installation](https://nix.dev/manual/nix/2.29/installation/)).
+  None of these applies to a devcontainer that is single-user with the
+  container itself as the isolation boundary; rather, a devcontainer
+  without systemd matches the intended use case of "environments that
+  cannot run the daemon".
+* Flakes are experimental upstream, so
+  `experimental-features = nix-command flakes` is required in
+  `~/.config/nix/nix.conf`. Sandboxing requires root or user namespaces,
+  so set `sandbox = false` (the container provides isolation).
+* `nix profile` can read nix-env-style profiles (`manifest.nix`) and
+  migrates them to the new format on first write (ProfileManifest in
+  `src/nix/profile.cc`). Combining the installer's `nix-env -i` with
+  postCreateCommand's `nix profile add` therefore works.
 
-## 5. 帰結
+## 5. Conclusion
 
-ADR-0010 (方式1: 汎用イメージ + postCreateCommand + /nix volume) を土台に、
-ADR-0011 で vscode/UID 1000 固定 (store サイズ比例の chown を定常経路から
-排除)、ADR-0012 で upstream single-user インストーラ採用 (root 昇格・
-`chown -R`・`/etc/nix` 復元の全廃、off-label 利用の解消) に至った。
+Starting from ADR-0010 (Approach 1: generic image + postCreateCommand +
+/nix volume), ADR-0011 fixed the user to vscode/UID 1000 (removing
+store-size-proportional chown from the steady-state path), and ADR-0012
+adopted the upstream single-user installer (eliminating root escalation,
+`chown -R`, and `/etc/nix` restore entirely, and ending the off-label
+usage).
