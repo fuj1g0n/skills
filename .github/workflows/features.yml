@@ -1,0 +1,67 @@
+name: devcontainer Features
+
+# E2E-test the Feature with the devcontainer CLI against a fixture
+# consuming workspace: the local source on PRs and on main (gating
+# publish), then the published GHCR artifact after publish on main.
+# See ADR-0015.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "features/**"
+      - ".github/workflows/features.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "features/**"
+      - ".github/workflows/features.yml"
+
+jobs:
+  e2e-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Run E2E test
+        run: bash features/test/nix-devshell/e2e.sh
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: e2e-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish Features to GHCR
+        uses: devcontainers/action@v1
+        with:
+          publish-features: "true"
+          base-path-to-features: "./features/src"
+          oci-registry: ghcr.io
+          features-namespace: fuj1g0n/skills
+          generate-docs: "false"
+          disable-repo-tagging: "true"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  e2e-test-published:
+    if: github.event_name != 'pull_request'
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Run E2E test against the published Feature
+        env:
+          FEATURE_REF: ghcr.io/fuj1g0n/skills/nix-devshell:latest
+        run: bash features/test/nix-devshell/e2e.sh
