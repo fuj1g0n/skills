@@ -15,6 +15,11 @@ trap 'docker rm -f "${CONTAINER_ID:-}" > /dev/null 2>&1 || true; rm -rf "${WORKS
 cp -r "${FIXTURE_SRC}/." "${WORKSPACE}/"
 cp -r features/src/nix-devshell "${WORKSPACE}/.devcontainer/nix-devshell"
 
+# mktemp creates a 700 dir owned by the CI user (UID 1001); the container
+# user vscode (UID 1000, updateRemoteUserUID=false) must be able to read
+# the bind-mounted workspace.
+chmod -R a+rX "${WORKSPACE}"
+
 up() {
   devcontainer up --workspace-folder "${WORKSPACE}" "$@"
 }
