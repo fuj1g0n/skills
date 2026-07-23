@@ -1,7 +1,8 @@
 name: devcontainer Features
 
-# PoC for ADR-0015 (proposed): E2E-test the Feature with the devcontainer
-# CLI against a fixture consuming workspace, then publish to GHCR.
+# E2E-test the Feature with the devcontainer CLI against a fixture
+# consuming workspace (on PRs and on main), then publish to GHCR
+# (on merge to main only). See ADR-0015.
 on:
   workflow_dispatch:
   pull_request:
@@ -10,7 +11,7 @@ on:
       - ".github/workflows/features.yml"
   push:
     branches:
-      - feature/ghcr-feature-publish-poc
+      - main
     paths:
       - "features/**"
       - ".github/workflows/features.yml"
