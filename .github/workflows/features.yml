@@ -1,8 +1,9 @@
 name: devcontainer Features
 
 # E2E-test the Feature with the devcontainer CLI against a fixture
-# consuming workspace (on PRs and on main), then publish to GHCR
-# (on merge to main only). See ADR-0015.
+# consuming workspace: the local source on PRs and on main (gating
+# publish), then the published GHCR artifact after publish on main.
+# See ADR-0015.
 on:
   workflow_dispatch:
   pull_request:
@@ -49,3 +50,18 @@ jobs:
           disable-repo-tagging: "true"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  e2e-test-published:
+    if: github.event_name != 'pull_request'
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Run E2E test against the published Feature
+        env:
+          FEATURE_REF: ghcr.io/fuj1g0n/skills/nix-devshell:latest
+        run: bash features/test/nix-devshell/e2e.sh

@@ -3,17 +3,32 @@
 # Simulates a consuming repository: a fixture workspace whose
 # devcontainer.json references only a base image and the Feature, brought
 # up with the devcontainer CLI. Run from the repository root.
+#
+# FEATURE_REF selects what to test:
+#   - unset/empty: the local Feature source in features/src (pre-publish)
+#   - an OCI ref (e.g. ghcr.io/fuj1g0n/skills/nix-devshell:latest):
+#     the published Feature, pulled from the registry (post-publish)
 set -euo pipefail
 
 FIXTURE_SRC=features/test/nix-devshell/fixture
+FEATURE_REF="${FEATURE_REF:-}"
 WORKSPACE=$(mktemp -d)
 trap 'docker rm -f "${CONTAINER_ID:-}" > /dev/null 2>&1 || true; rm -rf "${WORKSPACE}"' EXIT
 
 # Stage the fixture outside the repo so the workspace looks like an
-# independent consuming repository, and inject the Feature source under
-# .devcontainer/ for a local file reference (pre-publish testing).
+# independent consuming repository.
 cp -r "${FIXTURE_SRC}/." "${WORKSPACE}/"
-cp -r features/src/nix-devshell "${WORKSPACE}/.devcontainer/nix-devshell"
+if [ -z "${FEATURE_REF}" ]; then
+  # Inject the Feature source under .devcontainer/ for the fixture's
+  # local file reference ("./nix-devshell").
+  cp -r features/src/nix-devshell "${WORKSPACE}/.devcontainer/nix-devshell"
+  echo "=== Testing local Feature source ==="
+else
+  # Point the fixture at the published Feature instead.
+  sed -i "s|\"./nix-devshell\"|\"${FEATURE_REF}\"|" \
+    "${WORKSPACE}/.devcontainer/devcontainer.json"
+  echo "=== Testing published Feature: ${FEATURE_REF} ==="
+fi
 
 # mktemp creates a 700 dir owned by the CI user (UID 1001); the container
 # user vscode (UID 1000, updateRemoteUserUID=false) must be able to read
