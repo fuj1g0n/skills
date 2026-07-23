@@ -1,0 +1,33 @@
+name: Publish devcontainer Features
+
+# PoC for ADR-0015 (proposed): verify that the devcontainer can be
+# distributed as a custom Feature published to GHCR from CI.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/ghcr-feature-publish-poc
+    paths:
+      - "features/**"
+      - ".github/workflows/publish-features.yml"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish Features to GHCR
+        uses: devcontainers/action@v1
+        with:
+          publish-features: "true"
+          base-path-to-features: "./features/src"
+          oci-registry: ghcr.io
+          features-namespace: fuj1g0n/skills
+          generate-docs: "false"
+          disable-repo-tagging: "true"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
