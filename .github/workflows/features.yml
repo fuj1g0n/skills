@@ -1,18 +1,35 @@
-name: Publish devcontainer Features
+name: devcontainer Features
 
-# PoC for ADR-0015 (proposed): verify that the devcontainer can be
-# distributed as a custom Feature published to GHCR from CI.
+# PoC for ADR-0015 (proposed): E2E-test the Feature with the devcontainer
+# CLI against a fixture consuming workspace, then publish to GHCR.
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "features/**"
+      - ".github/workflows/features.yml"
   push:
     branches:
       - feature/ghcr-feature-publish-poc
     paths:
       - "features/**"
-      - ".github/workflows/publish-features.yml"
+      - ".github/workflows/features.yml"
 
 jobs:
+  e2e-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Run E2E test
+        run: bash features/test/nix-devshell/e2e.sh
+
   publish:
+    if: github.event_name != 'pull_request'
+    needs: e2e-test
     runs-on: ubuntu-latest
     permissions:
       contents: read
