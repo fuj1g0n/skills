@@ -1,6 +1,6 @@
 {
   "id": "nix-devshell",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "Nix flake devShell (single-user, create-time install) [PoC]",
   "description": "PoC: installs upstream Nix in single-user mode at container-create time into a /nix named volume, with direnv + nix-direnv + nil + nixfmt, per fuj1g0n/skills ADR-0010..0015.",
   "documentationURL": "https://github.com/fuj1g0n/skills",
