@@ -24,10 +24,10 @@ export USER="${USER:-$(id -un)}"
 NIX_VERSION=2.31.2
 NIX_INSTALLER_SHA256=078e2ffeddf6a9c1f22adf41458ccc46a58bb26911a9e01579645314f9982994
 
-# Store paths of the bootstrap profile (nix + cacert), recorded inside the
-# /nix volume so a rebuilt container can restore the user profile offline
-# and deterministically (the user profile lives under $HOME and is lost on
-# container re-creation; the store survives in the volume).
+# Store path of the bootstrap Nix, recorded inside the /nix volume so a
+# rebuilt container can restore the user profile offline and
+# deterministically (the user profile symlink lives under $HOME and is lost
+# on container re-creation; the store survives in the volume).
 BOOTSTRAP_MANIFEST=/nix/.bootstrap-paths
 
 # The /nix volume mount point is created root-owned; hand it to the container
@@ -38,16 +38,20 @@ if [ ! -w /nix ]; then
 fi
 
 if [ ! -e ~/.nix-profile ]; then
+  bootstrap_nix=""
   if [ -f "${BOOTSTRAP_MANIFEST}" ]; then
+    bootstrap_nix=$(head -n 1 "${BOOTSTRAP_MANIFEST}")
+  fi
+  if [ -n "${bootstrap_nix}" ] && [ -x "${bootstrap_nix}/bin/nix-env" ]; then
     # Reused /nix volume: rebuild the user profile from the exact store
-    # paths recorded at install time (no network, no globbing heuristics).
+    # path recorded at install time (no network, no globbing heuristics).
     echo "Reusing existing /nix volume; rebuilding user profile from the store..."
-    mapfile -t bootstrap_paths < "${BOOTSTRAP_MANIFEST}"
-    "${bootstrap_paths[0]}/bin/nix-env" -i "${bootstrap_paths[@]}"
+    "${bootstrap_nix}/bin/nix-env" -i "${bootstrap_nix}"
   else
-    # Fresh /nix volume (or a volume from a pre-manifest script version):
-    # run the pinned upstream installer as vscode. It tolerates an existing
-    # /nix, copying missing store paths and rebuilding the profile.
+    # Fresh /nix volume, a volume from a pre-manifest script version, or a
+    # missing/corrupt manifest: run the pinned upstream installer as vscode.
+    # It tolerates an existing /nix, copying missing store paths and
+    # rebuilding the profile.
     # --no-daemon: single-user mode; the invoking user owns the store.
     echo "Installing Nix ${NIX_VERSION} (single-user)..."
     curl --proto '=https' --tlsv1.2 -fsSL --retry 3 \
@@ -87,20 +91,20 @@ if ! grep -q "nix.sh" ~/.bashrc; then
   echo '[ -e ~/.nix-profile/etc/profile.d/nix.sh ] && . ~/.nix-profile/etc/profile.d/nix.sh' >> ~/.bashrc
 fi
 
-# Install direnv/nix-direnv user-wide from this flake (pinned by flake.lock).
-# direnv cannot live only in the devShell: it must exist before the shell
-# loads (bootstrap problem).
+# Install user-wide packages from this flake (pinned by flake.lock), each
+# individually guarded so a partial previous state is repaired instead of
+# skipped (nix profile add errors on packages that are already installed).
+# - direnv/nix-direnv cannot live only in the devShell: they must exist
+#   before the shell loads (bootstrap problem).
+# - nil and nixfmt are user-wide as a pair: the VS Code Nix extension
+#   launches nil outside the direnv environment, and nil in turn spawns
+#   nixfmt (see nix.serverSettings in devcontainer.json), so both must
+#   resolve without the devShell on PATH.
 echo "Installing global packages via Nix profile..."
-if ! command -v direnv > /dev/null 2>&1; then
-  nix profile add .#direnv .#nix-direnv
-fi
-# nil and nixfmt are user-wide as a pair: the VS Code Nix extension launches
-# nil outside the direnv environment, and nil in turn spawns nixfmt (see
-# nix.serverSettings in devcontainer.json), so both must resolve without the
-# devShell on PATH.
-if ! command -v nil > /dev/null 2>&1; then
-  nix profile add .#nil .#nixfmt
-fi
+command -v direnv > /dev/null 2>&1 || nix profile add .#direnv
+[ -e ~/.nix-profile/share/nix-direnv/direnvrc ] || nix profile add .#nix-direnv
+command -v nil > /dev/null 2>&1 || nix profile add .#nil
+command -v nixfmt > /dev/null 2>&1 || nix profile add .#nixfmt
 
 # nix-direnv: cache devShell evaluation for fast direnv loads
 # ($HOME is ephemeral, so written idempotently).
