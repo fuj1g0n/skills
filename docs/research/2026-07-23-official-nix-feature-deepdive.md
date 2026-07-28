@@ -1,3 +1,7 @@
+---
+type: Research Snapshot
+---
+
 # Official Nix devcontainer Feature deep-dive (research snapshot)
 
 Date: 2026-07-23. Immutable research snapshot (ADR-0006 tier 2), companion

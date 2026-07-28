@@ -1,3 +1,7 @@
+---
+type: Research Snapshot
+---
+
 # GHCR prebuilt devcontainer image: feasibility and pitfalls (research snapshot)
 
 Date: 2026-07-23. Immutable research snapshot (ADR-0006 tier 2) backing

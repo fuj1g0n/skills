@@ -1,4 +1,5 @@
 ---
+type: Architecture Decision Record
 status: proposed
 date: 2026-07-23
 decision-makers: "@fuj1g0n (with GitHub Copilot CLI)"

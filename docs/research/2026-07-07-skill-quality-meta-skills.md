@@ -1,3 +1,7 @@
+---
+type: Research Snapshot
+---
+
 # Survey: meta-skills and tooling for improving agent-skill quality
 
 Point-in-time snapshot, 2026-07-07. Supports
