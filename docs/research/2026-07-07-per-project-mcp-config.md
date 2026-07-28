@@ -1,3 +1,7 @@
+---
+type: Research Snapshot
+---
+
 # Per-project MCP configuration: Copilot CLI, VS Code, and APM (survey snapshot)
 
 Date: 2026-07-07. Immutable research snapshot backing ADR-0009. Sources are

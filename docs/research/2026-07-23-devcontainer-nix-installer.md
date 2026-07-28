@@ -1,3 +1,7 @@
+---
+type: Research Snapshot
+---
+
 # Devcontainer Nix installer: single-user feasibility survey (snapshot)
 
 Date: 2026-07-23. Immutable research snapshot backing ADR-0010/0011/0012.

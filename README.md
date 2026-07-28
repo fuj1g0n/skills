@@ -65,22 +65,7 @@ dependencies:
 Note: pin with a full 40-char commit SHA (or a tag); short SHAs and floating
 branches do not resolve reliably.
 
-## Decisions
+## Documentation
 
-Architecture decision records live in [docs/adr/](docs/adr/) (MADR 4.0
-format, see ADR-0004):
-
-- [0001](docs/adr/0001-manage-user-global-skills-with-apm.md) — Manage user-global agent skills with Microsoft APM and a personal skills repository
-- [0002](docs/adr/0002-apm-package-layout-and-reexport.md) — Use the `.apm/skills/` package layout and re-export third-party skills as APM dependencies
-- [0003](docs/adr/0003-curated-skill-set-external-survey.md) — Curate the development-environment skill set from an external landscape survey
-- [0004](docs/adr/0004-adopt-madr-format.md) — Adopt MADR 4.0 as the ADR format
-- [0005](docs/adr/0005-adr-skill-sourcing.md) — Author an original `adr` skill adapted from MIT-licensed sources
-- [0006](docs/adr/0006-manage-adr-research-material.md) — Manage ADR research material with a three-tier rule (embed, snapshot, or link)
-- [0007](docs/adr/0007-author-original-skill-authoring-skill.md) — Author an original `skill-authoring` skill combining audited upstream practices
-- [0008](docs/adr/0008-windows-hello-for-wsl-sudo.md) — Windows Hello authentication for sudo inside WSL (rejected)
-- [0009](docs/adr/0009-per-project-mcp-config-via-root-mcp-json.md) — Use project-root `.mcp.json` for per-project MCP configuration
-
-## Research
-
-Immutable research snapshots backing the ADRs (per ADR-0006) live in
-[docs/research/](docs/research/) as `YYYY-MM-DD-topic.md`.
+[docs/](docs/index.md) is an Open Knowledge Format (OKF) v0.2 bundle (see
+ADR-0017).

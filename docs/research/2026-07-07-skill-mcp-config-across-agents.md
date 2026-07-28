@@ -1,3 +1,7 @@
+---
+type: Research Snapshot
+---
+
 # Skill and MCP configuration across AI coding agents (survey snapshot)
 
 Date: 2026-07-07. Immutable research snapshot (ADR-0006 tier 2).
