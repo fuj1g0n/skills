@@ -1,6 +1,6 @@
 ---
 type: Architecture Decision Record
-status: proposed
+status: accepted
 date: 2026-07-28
 decision-makers: "@fuj1g0n (with GitHub Copilot CLI)"
 ---
@@ -68,7 +68,7 @@ repo-documentation formats.
 
 ## Decision Outcome
 
-Proposed option: "Author one original documentation skill", because the
+Chosen option: "Author one original documentation skill", because the
 format areas worth encoding (Diátaxis structure, README, CHANGELOG,
 docs-as-code hygiene) are exactly the ones with **no fit upstream to depend
 on or fork** — the survey found them absent or thin across every collection
@@ -78,13 +78,17 @@ licensed or usable as concepts; and the areas share one trigger surface
 them (the sizing judgment of
 [ADR-0007](0007-author-original-skill-authoring-skill.md)).
 
-**Provided as a new skill** (working name `documentation`, at
-`.apm/skills/documentation/`, in a follow-up PR after this ADR is
-accepted):
+**Provided as a new skill** (`documentation`, at
+`.apm/skills/documentation/`, landed with this ADR's acceptance):
 
 * Diátaxis as the organizing rule for `docs/` content: the four types,
   the compass, incremental application (concepts only with the canonical
   site linked — the framework has no formal license).
+* OKF bundle conventions, per
+  [ADR-0018](0018-integrate-okf-conventions-instead-of-okf-skill.md):
+  bundle detection (root `index.md` with `okf_version`), `type:`
+  frontmatter on every concept, deference to the repository's
+  reserved-file policy, canonical spec linked never vendored.
 * README conventions per standard-readme (MIT): required/optional
   sections and their fixed order.
 * CHANGELOG per Keep a Changelog 1.1.0: six change types, `Unreleased`
@@ -108,12 +112,10 @@ accepted):
 
 **Deferred / out of scope** (recorded to prevent re-litigation):
 
-* OKF bundle-authoring guidance: OKF itself is adopted for this
-  repository's documentation (ADR-0017), but an installed skill for
-  authoring/maintaining OKF bundles is a separate adoption decision under
-  skill-management criteria; fit upstreams are identified for that day
-  (scaccogatto/okf-skills MIT, vendoring spec v0.2; serradura/okf-gem
-  Apache-2.0, v0.1).
+* OKF bundle-authoring guidance as a standalone skill: resolved by
+  [ADR-0018](0018-integrate-okf-conventions-instead-of-okf-skill.md) —
+  no OKF skill is adopted (via APM or fork); minimal conventions are
+  integrated into the `adr` skill and this documentation skill instead.
 * llms.txt (publish-side concern, modest adoption, not auto-fetched);
   arc42/C4 full templates (no recurring architecture-doc need beyond
   decision records); DITA and Information Mapping (XML toolchain /
@@ -137,8 +139,9 @@ accepted):
 
 ### Confirmation
 
-Decision before implementation: the skill lands only after this ADR is
-accepted. At authoring time the `skill-authoring` release checks apply:
+Decision before implementation: the skill lands in the same change as
+this ADR's acceptance. At authoring time the `skill-authoring` release
+checks apply:
 Iteration-0 description/body consistency, `scripts/audit.sh`, `apm audit`,
 and deployment via the `skill-management` workflow. The description is
 verified to trigger on documentation keywords (README, CHANGELOG, docs

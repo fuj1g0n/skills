@@ -60,7 +60,11 @@ rejected option is worth an ADR (`rejected`) when the rejection must stick.
 - **H1**: the short title only (no number prefix) — representative of both
   problem and solution, a noun phrase ("Use PostgreSQL for user data").
 - **Frontmatter**: `status` and `date` (ISO 8601) always; `decision-makers`
-  when known; `consulted` / `informed` only if the project uses them.
+  when known; `consulted` / `informed` only if the project uses them. In an
+  OKF bundle (root `index.md` declares `okf_version`), also add
+  `type: Architecture Decision Record` as the first key; status keeps MADR
+  values, and reserved `index.md`/`log.md` follow the repository's stated
+  policy — do not assume they need updates.
 - **Sections**: `## Context and Problem Statement` and `## Decision Outcome`
   always; `## Considered Options` whenever more than one option was on the
   table (almost always); `## Decision Drivers`, `### Consequences`,
