@@ -40,60 +40,91 @@ Linux toolchain artifacts inside an NTFS tree break Windows tooling.
 * Per-command `wsl nix develop -c` (no persistent delegation)
 * Windows `.cmd` shims onto resolved store paths ("shim approach")
 * devcontainer CLI with docker/podman inside WSL
-* wslc container + GHCP CLI `preToolUse` hook rerouting
+* wslc container + `preToolUse` hook rewriting every shell command
+* wslc container + skill/wrapper delegation with a `preToolUse` guard
 
 ## Decision Outcome
 
-Chosen option: "wslc container + GHCP CLI `preToolUse` hook rerouting",
-because it is the only option that preserves devShell fidelity
-(execution happens in a real Linux shell inside the container, with
+Chosen option: "wslc container + skill/wrapper delegation with a
+`preToolUse` guard", because a wslc container is the only execution
+substrate that preserves devShell fidelity (a real Linux shell with
 direnv/nix-direnv working as the skills assume), keeps Linux artifacts
-out of the NTFS tree where they would be broken anyway, uses
-first-party tooling end to end (wslc ships with WSL; hooks are a
-documented GHCP CLI mechanism), and — uniquely — gives fail-closed
-enforcement: `preToolUse` command hooks deny the tool call when the
-hook errors, so shell execution cannot silently fall back to Windows.
+out of the NTFS tree, and needs no Docker Desktop — and because, among
+the two instruction mechanisms on top of it, cooperative delegation
+(skill + wrapper) is structurally sounder than transparent rewriting:
+
+* Rewriting is blind string surgery. The model on Windows emits
+  PowerShell by default; a hook cannot translate dialects, so the
+  rewrite variant *also* needs an instruction layer steering the model
+  to POSIX sh — it never stands alone. And the model cannot see the
+  rewrite, so mismatched output degrades into undebuggable confusion.
+* A skill makes the model a knowing participant: it can run container
+  setup, map paths contextually, and emit POSIX commands on purpose.
+  Skills are also this repository's existing distribution channel to
+  the wide set of consuming projects, whereas hook configs must be
+  provisioned per repo or per user.
+* A thin wrapper command (`devshell-exec <cmd>`) mechanizes the long
+  `wslc exec … direnv exec .` incantation, cutting the model's
+  generation error surface to near zero.
+* The hook is kept, but demoted from rewriter to guard: it *denies*
+  shell commands that invoke devShell-managed tools directly on
+  Windows and replies "use devshell-exec". Deny-with-feedback retains
+  the fail-closed enforcement that instructions alone lack, avoids the
+  dialect-translation problem entirely, and lets the model self-correct
+  from the denial message.
 
 Architecture outline:
 
 * A wslc container per project, image with Nix (single-user, per
   ADR-0012), `/nix` on a persistent volume (per ADR-0010), project
   mounted from `C:\` (wslc default filesystem is virtiofs).
-* `sessionStart` hook ensures the container is running.
-* `preToolUse` hook intercepts shell tool calls and returns
-  `modifiedArgs` rewriting the command to
-  `wslc exec <container> bash -lc '<command>'`, with Windows-to-container
-  path mapping; an explicit exception list (git, gh, credential
-  operations) stays on Windows.
-* AGENTS.md instructs the model to emit POSIX-sh commands.
+* A `devshell-exec` wrapper script (Windows side) encapsulating
+  container start-if-needed plus
+  `wslc exec -u <user> -e USER=<user> <container> bash -c
+  '. nix.sh && cd <mount> && direnv exec . <cmd>'` with
+  Windows-to-container path mapping.
+* A skill (Windows section of `nix-for-dev` or a companion skill)
+  teaching: container provisioning, the CRLF/.gitattributes and direnv
+  layout prerequisites, and the rule "all devShell work goes through
+  `devshell-exec`; emit POSIX sh inside it".
+* An optional `preToolUse` guard hook denying direct Windows-side
+  invocation of devShell tool names, added when instruction drift is
+  observed; `sessionStart` hook may pre-start the container.
 * Layering: self-contained CLI tools may still use direct store-path
   invocation (millisecond shims); workloads that fit neither layer are
   declared unsupported on Windows.
 
 This decision is `proposed`; the PoC below validated wslc availability
 and exec latency, devShell-in-wslc with a `/nix` volume and a
-`C:\`-mounted tree, and `modifiedArgs` behavior against real hook
-payloads. Remaining before acceptance: productizing the hook scripts
-and container lifecycle management.
+`C:\`-mounted tree, and hook `modifiedArgs`/fail-closed behavior
+against real payloads (informing the rewriter-vs-guard choice). A
+provisional wrapper + skill implementation lives at
+`.apm/skills/nix-windows-wslc/` (validated on this repository:
+provisioning from scratch, warm exec ~0.8 s end-to-end including
+devShell activation, subdirectory cwd mapping, exit-code propagation,
+auto-restart of a stopped container). Remaining before acceptance:
+guard-hook decision, multi-project validation, and container lifecycle
+management.
 
 ### Consequences
 
 * Good, because devShell semantics survive intact — no bespoke
   re-implementation of nix-direnv or env snapshots on Windows.
-* Good, because enforcement is structural (fail-closed hook), not
-  advisory (instructions, PATH ordering).
+* Good, because enforcement is structural (fail-closed guard hook),
+  not only advisory (skill text), while the model remains a knowing
+  participant that can self-correct from denial feedback.
 * Good, because Docker Desktop is not required and no third-party
   container runtime must be maintained.
 * Bad, because wslc is public preview: CLI surface and behavior may
   change; no compose (services must run via process-compose inside the
   devShell, which the skills already prefer).
-* Bad, because every rerouted tool call pays hook + exec overhead
+* Bad, because every delegated tool call pays wrapper + exec overhead
   (measured: 0.23–0.39 s warm end-to-end for
-  `wslc exec … direnv exec . <cmd>`, plus pwsh hook spawn), and the
-  PowerShell-emitting model must be steered to POSIX sh, leaving a
+  `wslc exec … direnv exec . <cmd>`), and the PowerShell-emitting
+  model must be steered to POSIX sh inside the wrapper, leaving a
   residual command-dialect mismatch rate.
-* Bad, because the reroute/exception hook script becomes maintained
-  infrastructure of this repository.
+* Bad, because the wrapper, skill text, and guard hook become
+  maintained infrastructure of this repository.
 * Bad, because inotify from Windows-side edits still does not reach
   container watchers; watch loops only work for changes made through
   the container path.
@@ -159,12 +190,26 @@ criteria passed:
   adding seconds of latency; falling back to raw `docker exec`
   abandons the devcontainer contract anyway.
 * Neutral, because it remains the fallback if wslc preview proves too
-  unstable; the hook-rerouting design is runtime-agnostic.
+  unstable; the delegation design is runtime-agnostic.
 
-### wslc container + GHCP CLI hook rerouting
+### wslc container + `preToolUse` hook rewriting every shell command
 
 * Good, because first-party, Docker-Desktop-free, virtiofs-native.
 * Good, because fail-closed enforcement of delegation.
+* Bad, because rewriting is invisible to the model and cannot
+  translate PowerShell to POSIX sh, so it still depends on an
+  instruction layer while adding a silent-magic failure mode.
+* Bad, because the exception list (git/gh/credentials) is regex-based
+  permanent maintenance.
+
+### wslc container + skill/wrapper delegation with a `preToolUse` guard
+
+* Good, because first-party, Docker-Desktop-free, virtiofs-native.
+* Good, because the model participates knowingly (setup, path mapping,
+  POSIX emission) and the wrapper mechanizes the exec incantation.
+* Good, because skills are the repository's existing distribution
+  channel to consuming projects; the optional guard hook restores
+  fail-closed enforcement without dialect translation.
 * Bad, because preview-quality runtime; measured quirks: stale wslc
   sessions break registry pulls until `wslc system session terminate`,
   `wslc exec` does not set `USER`, and there is no `cp` subcommand.
