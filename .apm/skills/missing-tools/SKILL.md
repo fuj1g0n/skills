@@ -1,11 +1,21 @@
 ---
 name: missing-tools
-description: Resolves missing CLI tools. Use when a command is unavailable, a shell reports command not found, or a tool must be run without installing it globally.
+description: Resolves missing CLI tools. Use immediately on command-not-found errors or when a CLI must run without a global install, especially after shell-state resets or when direnv/Nix is inactive.
 ---
 
 # Missing Tools
 
 Use this workflow when a command is unavailable in the current shell.
+
+## Trigger gate
+
+On any `command not found` error, invoke this workflow before searching paths,
+locating binaries manually, or attempting an installation.
+
+Treat every fresh shell as potentially uninitialized. Shell state, including
+PATH and direnv activation, may reset between commands. A command succeeding
+earlier does not prove that it is available now; if the project has `.envrc`,
+`flake.nix`, or another managed environment, re-check it first.
 
 ## Step 1: Decide the scope
 
