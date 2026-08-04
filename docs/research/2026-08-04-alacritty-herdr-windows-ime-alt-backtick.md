@@ -1,15 +1,45 @@
-# Research: Alt+backtick leaks into Herdr when toggling the Windows Japanese IME
+# Research: Initial Windows IME backtick hypothesis (superseded)
 
 Date: 2026-08-04
 Author: @fuj1g0n (with GitHub Copilot CLI)
-Status: immutable snapshot
+Status: superseded
+Superseded by:
+[2026-08-04-alacritty-winit-ime-release-repeat-trace](2026-08-04-alacritty-winit-ime-release-repeat-trace.md)
 
-## Question
+## Correction notice
+
+Do not use this document as the current root-cause analysis.
+
+The initial investigation incorrectly inferred that Alacritty
+reconstructed an Alt-modified backtick press and that Herdr then
+converted that press to legacy pane input. Later byte-level and
+Alacritty event-level captures disproved that mechanism.
+
+The observed event is instead:
+
+```text
+Backquote physical key, logical_key=Character("`"),
+  state=Released, repeat=true
+```
+
+Alacritty encodes this anomalous release as a modifier-free Kitty
+Repeat because its event-type selection checks `repeat` before
+`Released`:
+
+```text
+ESC [ 96 ; 1 : 2 u
+```
+
+Herdr correctly parses and forwards that already formed sequence. It
+reveals the defect because it enables Kitty event reporting, but it
+does not originate the malformed lifecycle.
+
+## Original question
 
 Why does pressing `Alt+backtick`, the Windows Japanese IME toggle on a
-US keyboard layout, insert a literal backtick while Alacritty is
-attached to a remote Herdr session, even though the same shortcut does
-not insert anything in a local Git Bash prompt?
+US keyboard layout, intermittently insert a literal backtick while
+Alacritty is attached to a remote Herdr session, even though the same
+shortcut does not insert anything in a local Git Bash prompt?
 
 The keyboard layout must remain US. The desired behavior is for
 Windows to toggle the IME without delivering a backtick to the
@@ -21,31 +51,26 @@ Observed on 2026-08-04:
 
 * Windows 11 with the Microsoft Japanese IME and a US keyboard layout
 * Alacritty 0.17.0
+* winit 0.30.13
 * Windows Alacritty config starts Git Bash
-* Windows Herdr 0.7.5 preview
-* WSL Herdr 0.7.5
-* Remote devbox Herdr 0.7.5
+* WSL Herdr client 0.7.5
+* Remote devbox Herdr server 0.7.5
 * Outer terminal `TERM=xterm-256color`
 * WSL and remote locale `C.UTF-8`
 
-The devbox launcher does not run a conventional interactive SSH
-session. Its effective path is:
+The effective path is:
 
 ```text
 Alacritty
   -> Git Bash
   -> wsl.exe
   -> herdr --remote devbox
-  -> SSH remote-client-bridge
+  -> SSH remote-client bridge
   -> remote Herdr server
   -> pane PTY
 ```
 
-The WSL client is significant because Herdr compiles its Unix terminal
-setup path there. The native Windows client intentionally skips the
-same keyboard-enhancement request.
-
-## Findings
+## Findings that remain valid
 
 ### Herdr enables Kitty keyboard progressive enhancement
 
@@ -60,76 +85,58 @@ This activates Kitty keyboard protocol handling in Alacritty. Herdr
 does not currently expose a configuration option to disable these host
 keyboard enhancements.
 
-`modifyOtherKeys` is not the cause in this environment.
-`ALACRITTY_WINDOW_ID` is not propagated into WSL, and Herdr enables
-that fallback only when it detects Alacritty, WezTerm, or tmux through
-their environment markers.
+The protocol changes visibility, not origin: it lets Alacritty express
+the anomalous host key event as a typed Kitty Repeat. It does not mean
+that Herdr generated the event.
 
-### Alacritty changes its behavior when Kitty disambiguation is active
+### The emitted bytes are a modifier-free Kitty Repeat
 
-Windows consumes `Alt+backtick` as an IME command, so the key event has
-no committed text. In Alacritty's legacy keyboard mode, a character
-key with no text does not produce a usable legacy sequence and no
-bytes reach Git Bash. This explains the correct local behavior.
-
-When `DISAMBIGUATE_ESCAPE_CODES` is active, Alacritty constructs a
-Kitty CSI-u sequence from the logical key and modifiers even when the
-event has no committed text. For the US-layout grave key with Alt, the
-press is encoded as:
+The complete Herdr path captured:
 
 ```text
-ESC [ 96 ; 3 u
+ESC [ 96 ; 1 : 2 u
 ```
 
-`96` is the Unicode code point for backtick. Kitty modifier value `3`
-means `1 + Alt`.
+Under the Kitty keyboard protocol:
 
-Alacritty can additionally report the release event because Herdr
-requested event types:
+* `96` is the backtick code point;
+* modifier value `1` means no modifiers;
+* event type `2` means Repeat.
+
+Herdr decoded those bytes as a modifier-free backtick Repeat. This
+behavior is protocol-conformant for the bytes it received.
+
+### The malformed lifecycle exists before Herdr input parsing
+
+Alacritty event tracing recorded the Backquote release as:
 
 ```text
-ESC [ 96 ; 3 : 3 u
+logical_key=Character("`"), state=Released, repeat=true
 ```
 
-### Herdr converts the reconstructed key back to legacy pane input
+winit derives `repeat` from Windows key-message state bits and does
+not constrain it to pressed events. Alacritty then prioritizes the
+repeat flag over the release state when selecting the Kitty event
+type. The inserted character therefore originates in the
+Alacritty/winit Windows input stack.
 
-Herdr parses the CSI-u sequence as:
+## Corrected root cause
 
-```text
-KeyCode::Char('`') + ALT
-```
+The root cause is a combination of two host-input behaviors:
 
-For a pane that has not negotiated Kitty keyboard reporting, Herdr's
-legacy encoder emits an ESC-prefixed Alt character:
+1. Windows and the Microsoft IME produce an unusual transformed
+   Backquote release lifecycle.
+2. winit exposes the release with `repeat=true`.
+3. Alacritty checks `repeat` before `Released` and emits Kitty event
+   type `2` rather than release event type `3`.
+4. Herdr parses and forwards the resulting Repeat.
 
-```text
-ESC `
-```
+SSH, the remote locale, the US keyboard layout, and Herdr's parser are
+not the source of the malformed event.
 
-The pane shell therefore receives an Alt-backtick key after Windows
-has already used the same physical chord to toggle the IME. In the
-observed Git Bash/readline configuration, the escape prefix has no
-visible representation and the backtick appears at the prompt.
+## Corrected workaround assessment
 
-## Root cause
-
-The root cause is the interaction between Windows IME consumption and
-Alacritty's Kitty keyboard disambiguation:
-
-1. Windows handles `Alt+backtick` as the Japanese IME toggle and
-   produces no committed text.
-2. Herdr has asked Alacritty to report disambiguated keys.
-3. Alacritty reconstructs a logical Alt-backtick event despite the
-   absence of committed text.
-4. Herdr preserves and re-encodes that event for the remote pane.
-
-SSH, the remote locale, and the US keyboard layout are not
-misconfigured. Remote attach exposes the problem because its WSL Herdr
-client enables the keyboard protocol that local Git Bash does not.
-
-## Mitigations considered
-
-### Suppress Alt+backtick in Alacritty
+The deployed binding is only a partial mitigation:
 
 ```toml
 [[keyboard.bindings]]
@@ -138,64 +145,43 @@ mods = "Alt"
 action = "None"
 ```
 
-Alacritty documents `None` as inhibiting any action. Windows processes
-the IME shortcut before Alacritty's terminal binding, while the
-binding prevents the reconstructed key from reaching the PTY.
+It can suppress an Alt-modified press but cannot suppress the later
+modifier-free release. Alacritty bypasses normal key-binding
+processing for release events. A no-modifier backtick binding would
+also disable legitimate backtick input and is not acceptable.
 
-Advantages:
+There is no safe configuration-only complete workaround that preserves
+both the current IME shortcut and normal backtick input. The preferred
+implementation fixes are:
 
-* Small, local, and reversible.
-* Preserves the US keyboard layout and existing IME shortcut.
-* Does not disable Kitty keyboard reporting for other keys.
+1. winit normalizes `repeat` to false for released keys.
+2. Alacritty prioritizes `Released` over `repeat` when encoding Kitty
+   event types.
 
-Trade-off:
+Herdr could reject orphan repeats defensively, but that would be a
+robustness measure rather than the primary fix.
 
-* Intentional Alt-backtick input is suppressed in every Alacritty
-  application, not only Herdr. This is acceptable because the chord is
-  reserved for IME toggling in this environment.
+## Incorrect conclusions removed
 
-### Use a plain devbox shell
+The following claims from the original version are not supported by
+the final captures and must not be repeated:
 
-`devbox.sh sh` avoids the Herdr UI and therefore avoids Herdr's
-keyboard enhancement request. It is useful for diagnosis but loses
-the persistent Herdr workspace and is not an acceptable primary
-workflow.
-
-### Change the Windows IME shortcut
-
-Assigning another toggle chord avoids the collision without changing
-the keyboard layout. It changes established muscle memory and leaves
-the terminal interoperability defect unresolved.
-
-### Add a Herdr legacy-host-keyboard option
-
-Herdr could expose an opt-out such as
-`host_keyboard_protocol = "legacy"` and skip
-`PushKeyboardEnhancementFlags`. This is the preferred upstream escape
-hatch, but it would reduce modified-key disambiguation and key-event
-reporting for the whole client.
-
-### Change Alacritty's Kitty behavior around consumed IME keys
-
-Alacritty could avoid reconstructing this key when Windows has
-consumed it as an IME command. This is the most precise upstream fix
-but requires Windows/IME-specific event semantics and may conflict
-with the protocol's goal of preserving modified keys.
+* that Alacritty emitted an Alt-modified `CSI 96;3u` press for the IME
+  chord;
+* that Herdr's legacy pane encoder was the cause of the visible
+  backtick;
+* that the `Alt+backtick` `None` binding was a complete workaround;
+* that a Herdr host-keyboard opt-out was the preferred root fix.
 
 ## Sources
 
-* Herdr 0.7.5 `src/main.rs`:
-  <https://github.com/herdrdev/herdr/blob/v0.7.5/src/main.rs>
-* Herdr 0.7.5 `src/input/model.rs`:
-  <https://github.com/herdrdev/herdr/blob/v0.7.5/src/input/model.rs>
-* Herdr 0.7.5 `src/input/parse.rs`:
-  <https://github.com/herdrdev/herdr/blob/v0.7.5/src/input/parse.rs>
-* Herdr 0.7.5 `src/input/encode.rs`:
-  <https://github.com/herdrdev/herdr/blob/v0.7.5/src/input/encode.rs>
+* Final event-level attribution:
+  [2026-08-04-alacritty-winit-ime-release-repeat-trace](2026-08-04-alacritty-winit-ime-release-repeat-trace.md)
+* Raw-byte capture:
+  [2026-08-04-alacritty-windows-ime-orphan-repeat-capture](2026-08-04-alacritty-windows-ime-orphan-repeat-capture.md)
 * Alacritty 0.17.0 keyboard input implementation:
   <https://github.com/alacritty/alacritty/blob/v0.17.0/alacritty/src/input/keyboard.rs>
-* Alacritty 0.17.0 binding configuration:
-  <https://github.com/alacritty/alacritty/blob/v0.17.0/extra/man/alacritty.5.scd>
+* winit 0.30.13 Windows keyboard implementation:
+  <https://github.com/rust-windowing/winit/blob/v0.30.13/src/platform_impl/windows/keyboard.rs>
 * Kitty keyboard protocol:
   <https://sw.kovidgoyal.net/kitty/keyboard-protocol/>
-
