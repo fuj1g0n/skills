@@ -11,7 +11,7 @@ decision-makers: "@fuj1g0n (with GitHub Copilot CLI)"
 > the initial Alt-modified event but not an intermittent
 > modifier-free Kitty Repeat emitted by the Alacritty/winit Windows
 > input path. See
-> [the follow-up research](../research/2026-08-04-alacritty-windows-ime-orphan-repeat-capture.md).
+> [the final event-trace research](../research/2026-08-04-alacritty-winit-ime-release-repeat-trace.md).
 
 ## Context and Problem Statement
 
@@ -131,6 +131,8 @@ Research snapshot:
 [2026-08-04-alacritty-herdr-windows-ime-alt-backtick](../research/2026-08-04-alacritty-herdr-windows-ime-alt-backtick.md).
 Empirical correction:
 [2026-08-04-alacritty-windows-ime-orphan-repeat-capture](../research/2026-08-04-alacritty-windows-ime-orphan-repeat-capture.md).
+Event-level attribution:
+[2026-08-04-alacritty-winit-ime-release-repeat-trace](../research/2026-08-04-alacritty-winit-ime-release-repeat-trace.md).
 
 Revisit this decision when Herdr offers a host keyboard protocol
 opt-out or Alacritty stops encoding Windows IME-consumed
