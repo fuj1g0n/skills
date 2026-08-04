@@ -21,10 +21,11 @@ a local Git Bash prompt, but a remote Herdr workflow inserts a literal
 backtick.
 
 The devbox launcher starts `herdr --remote devbox` inside WSL. The Unix
-Herdr client enables Kitty keyboard progressive enhancement, causing
-Alacritty to reconstruct a CSI-u Alt-backtick key even though Windows
-consumed the chord as an IME command and produced no committed text.
-Herdr then converts the key to legacy `ESC` plus backtick for the pane.
+Herdr client enables Kitty keyboard progressive enhancement. During
+the IME chord, winit can report the Backquote release as
+`Released + repeat=true`. Alacritty prioritizes the repeat flag over
+the release state and emits a modifier-free Kitty Repeat. Herdr parses
+and forwards that already formed sequence.
 
 How should the environment preserve the existing US layout and IME
 shortcut without leaking a backtick into Herdr panes?
@@ -50,8 +51,8 @@ shortcut without leaking a backtick into Herdr panes?
 
 The original decision chose "Suppress `Alt+backtick` with an
 Alacritty `None` binding", because Windows handles the IME shortcut
-before Alacritty's terminal key binding, while Alacritty can prevent
-the ordinary reconstructed key from reaching the PTY:
+before Alacritty's terminal key binding, while the binding can prevent
+an ordinary Alt-modified event from reaching the PTY:
 
 ```toml
 [[keyboard.bindings]]
@@ -99,7 +100,7 @@ emit a modifier-free backtick Repeat that does not match this binding.
 ### Use a plain SSH shell instead of Herdr
 
 * Good, because a shell that does not enable Kitty keyboard
-  enhancement does not reconstruct the consumed key.
+  enhancement does not expose the anomalous release as a Kitty Repeat.
 * Bad, because it removes persistent Herdr workspace and agent
   management functionality.
 

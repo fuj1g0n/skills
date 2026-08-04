@@ -4,6 +4,16 @@ Date: 2026-08-04
 Author: @fuj1g0n (with GitHub Copilot CLI)
 Status: immutable snapshot
 
+## Authority
+
+This is the authoritative root-cause analysis for this incident. It
+supersedes both the
+[initial hypothesis](2026-08-04-alacritty-herdr-windows-ime-alt-backtick.md)
+and the
+[raw-byte attribution](2026-08-04-alacritty-windows-ime-orphan-repeat-capture.md).
+The earlier documents now contain explicit supersession notices and
+must not be used for the final component attribution.
+
 ## Question
 
 Earlier captures established that Alacritty emits a modifier-free Kitty

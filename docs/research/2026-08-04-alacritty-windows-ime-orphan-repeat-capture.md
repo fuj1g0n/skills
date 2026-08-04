@@ -2,7 +2,21 @@
 
 Date: 2026-08-04
 Author: @fuj1g0n (with GitHub Copilot CLI)
-Status: immutable snapshot
+Status: superseded
+Superseded by:
+[2026-08-04-alacritty-winit-ime-release-repeat-trace](2026-08-04-alacritty-winit-ime-release-repeat-trace.md)
+
+## Supersession notice
+
+This document remains the authoritative raw-byte capture, but its
+component attribution was incomplete before Alacritty event tracing
+was available. The final trace established that winit supplied a
+Backquote event with `state=Released, repeat=true`, and Alacritty
+encoded it as a Kitty Repeat because `repeat` takes precedence over
+`Released`.
+
+Use the superseding event-trace research for root-cause attribution
+and fix recommendations.
 
 ## Question
 
@@ -135,23 +149,17 @@ was loaded.
 
 ## Component attribution
 
-The primary defect is most likely in the Alacritty/winit Windows input
-path, not in SSH or the remote Herdr server:
+The primary defect is in the Alacritty/winit Windows input path, not in
+Herdr, SSH, or the remote server:
 
 * Alacritty is the component that emits the modifier-free Kitty
   sequence.
-* The event follows a chord that Alacritty's own binding already
-  consumed.
-* A key binding applies to an individual event rather than retaining a
-  suppression decision for the physical key's full press/repeat/release
-  lifecycle.
-* The modifier state changes between the suppressed event and the
-  emitted Repeat.
-
-The current capture does not distinguish whether winit supplied the
-modifier-free repeat or Alacritty derived it from lower-level Windows
-events. Alacritty event tracing would be needed to assign the defect
-between those two layers.
+* Subsequent event tracing proved that winit supplied a Backquote
+  release with `repeat=true`.
+* Alacritty encoded that release as Kitty Repeat because its encoder
+  checks `repeat` before `Released`.
+* Alacritty release events bypass normal key-binding processing, so the
+  configured binding cannot suppress the anomalous event.
 
 Herdr could defensively ignore a Repeat without a previously observed
 Press, but that would be resilience against malformed or incomplete
@@ -182,17 +190,20 @@ being encoded as Kitty repeats. This belongs primarily in
 Alacritty/winit. No Alacritty issue has been filed pending explicit
 approval.
 
-## Correction to the earlier research
+## Relationship to the other research
 
 The earlier snapshot
 [2026-08-04-alacritty-herdr-windows-ime-alt-backtick](2026-08-04-alacritty-herdr-windows-ime-alt-backtick.md)
-correctly identified the Kitty keyboard path but overestimated the
-Alacritty binding as a complete mitigation and assigned too much
-responsibility to Herdr's forwarding behavior.
+contained an unsupported mechanism: it inferred an Alt-modified
+backtick press that was not present in the final event trace. It also
+overestimated the Alacritty binding and assigned too much causal
+responsibility to Herdr.
 
-The empirical capture in this document supersedes those conclusions:
-the binding is partial, and the remaining event is emitted by the
-Alacritty/winit host-input path before Herdr receives it.
+This raw-byte capture disproved part of that initial hypothesis. The
+later
+[event-trace research](2026-08-04-alacritty-winit-ime-release-repeat-trace.md)
+completed the attribution between winit and Alacritty and supersedes
+this document's original uncertainty.
 
 ## Sources
 
@@ -207,4 +218,3 @@ Alacritty/winit host-input path before Herdr receives it.
   <https://github.com/herdrdev/herdr/blob/v0.8.0/src/app/input/lease.rs>
 * Herdr 0.8.0 input runtime:
   <https://github.com/herdrdev/herdr/blob/v0.8.0/src/app/runtime.rs>
-
