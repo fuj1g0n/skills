@@ -1,11 +1,17 @@
 ---
 type: Architecture Decision Record
-status: accepted
+status: deprecated
 date: 2026-08-04
 decision-makers: "@fuj1g0n (with GitHub Copilot CLI)"
 ---
 
 # Suppress Windows IME Alt+backtick terminal input in Alacritty
+
+> Deprecated: empirical follow-up found that this binding suppresses
+> the initial Alt-modified event but not an intermittent
+> modifier-free Kitty Repeat emitted by the Alacritty/winit Windows
+> input path. See
+> [the follow-up research](../research/2026-08-04-alacritty-windows-ime-orphan-repeat-capture.md).
 
 ## Context and Problem Statement
 
@@ -42,10 +48,10 @@ shortcut without leaking a backtick into Herdr panes?
 
 ## Decision Outcome
 
-Chosen option: "Suppress `Alt+backtick` with an Alacritty `None`
-binding", because Windows handles the IME shortcut before Alacritty's
-terminal key binding, while Alacritty can prevent the reconstructed
-key from reaching the PTY:
+The original decision chose "Suppress `Alt+backtick` with an
+Alacritty `None` binding", because Windows handles the IME shortcut
+before Alacritty's terminal key binding, while Alacritty can prevent
+the ordinary reconstructed key from reaching the PTY:
 
 ```toml
 [[keyboard.bindings]]
@@ -55,7 +61,9 @@ action = "None"
 ```
 
 The binding is deployed in the Windows user configuration at
-`%APPDATA%\alacritty\alacritty.toml`.
+`%APPDATA%\alacritty\alacritty.toml`. It remains a partial mitigation,
+but it is not a complete decision outcome: Alacritty can subsequently
+emit a modifier-free backtick Repeat that does not match this binding.
 
 ### Consequences
 
@@ -69,6 +77,8 @@ The binding is deployed in the Windows user configuration at
   or restarting the remote Herdr server.
 * Bad, because intentional `Alt+backtick` input is suppressed in all
   Alacritty sessions, not only while Herdr is active.
+* Bad, because the binding does not suppress intermittent
+  modifier-free Repeat events emitted after the IME chord.
 * Bad, because the workaround lives in user-level terminal
   configuration and is not distributed automatically by this
   repository.
@@ -119,8 +129,9 @@ The binding is deployed in the Windows user configuration at
 
 Research snapshot:
 [2026-08-04-alacritty-herdr-windows-ime-alt-backtick](../research/2026-08-04-alacritty-herdr-windows-ime-alt-backtick.md).
+Empirical correction:
+[2026-08-04-alacritty-windows-ime-orphan-repeat-capture](../research/2026-08-04-alacritty-windows-ime-orphan-repeat-capture.md).
 
 Revisit this decision when Herdr offers a host keyboard protocol
 opt-out or Alacritty stops encoding Windows IME-consumed
 `Alt+backtick` events under Kitty keyboard disambiguation.
-
