@@ -1,14 +1,15 @@
+[CmdletBinding(PositionalBinding = $false)]
 param(
+    [Parameter(Mandatory, Position = 0)]
+    [ValidateSet("shell", "exec")]
     [string]$Mode,
     [string]$Distribution = $env:WSL_DEV_DISTRO,
-    [string]$ProjectDirectory = (Get-Location).Path
+    [string]$ProjectDirectory = (Get-Location).Path,
+    [Parameter(Position = 1, ValueFromRemainingArguments)]
+    [string[]]$Arguments = @()
 )
 
 $ErrorActionPreference = "Stop"
-
-if ($Mode -notin @("shell", "exec")) {
-    throw "Mode must be either shell or exec."
-}
 
 if ([string]::IsNullOrWhiteSpace($Distribution)) {
     throw "Specify -Distribution or set WSL_DEV_DISTRO."
@@ -25,10 +26,10 @@ if ($Mode -eq "shell") {
     exit $LASTEXITCODE
 }
 
-if ($args.Count -eq 0) {
+if ($Arguments.Count -eq 0) {
     throw "The exec mode requires a command after the options."
 }
 
 & wsl.exe --distribution $Distribution --cd $wslProjectPath --exec `
-    bash -lc 'exec direnv exec . "$@"' wsl-dev @args
+    bash -lc 'exec direnv exec . "$@"' wsl-dev @Arguments
 exit $LASTEXITCODE

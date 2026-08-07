@@ -5,4 +5,4 @@ if ($LASTEXITCODE -ne 0) {
     throw "The deployed user environment verification failed."
 }
 
-Write-Output "Deployment regression passed: persisted, sanitized fallback, and profile-loaded environments resolve the adapter config."
+Write-Output "Deployment regression passed: config discovery and profile/no-profile launcher exposure are correct."
