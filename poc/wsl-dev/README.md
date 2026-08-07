@@ -59,6 +59,23 @@ Run the contract and negative-path test with:
 ./poc/wsl-dev/test-wsl-bash-adapter.ps1
 ```
 
+Run the installed native direnv architecture comparison with:
+
+```powershell
+$direnv = (Get-Command direnv.exe).Source
+./poc/wsl-dev/measure-architectures.ps1 -DirenvPath $direnv -Samples 7
+```
+
+The benchmark copies fixtures to a temporary path containing spaces and tests
+the Git Bash filter, WSL Bash adapter, and direct `wsl-dev exec` paths. It
+records individual cold/warm wall-time samples and verifies allow/re-allow,
+reload, `.envrc` blocking, path conversion, empty and Unicode values, variable
+casing, stderr and exit codes, metadata filtering, and repeated invocation.
+The adapters intentionally discard evaluator-side `DIRENV_WATCHES`, so a
+proxy `watch_file flake.nix` does not trigger native reevaluation. Native
+direnv still watches `.envrc`; WSL nix-direnv owns real flake watches at
+runtime.
+
 The test downloads native direnv 2.37.1 to an isolated temporary directory,
 verifies its published SHA-256, publishes the adapter, and uses temporary XDG
 and direnv configuration. It does not read or modify the repository root
