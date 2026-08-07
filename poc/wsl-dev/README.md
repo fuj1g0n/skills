@@ -65,6 +65,30 @@ proxy:
 ./poc/wsl-dev/deploy-user.ps1 -Distribution Ubuntu-24.04
 ```
 
+Windows cannot mutate the environment block of a PowerShell process that was
+already running when deployment completed. The script broadcasts the user
+environment change for subsequently launched processes and prints this
+one-line activation command for the current PowerShell:
+
+```powershell
+'DIRENV_CONFIG', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME', 'XDG_DATA_HOME', 'WSL_DEV_DISTRO' | ForEach-Object { Set-Item -Path "Env:$_" -Value ([Environment]::GetEnvironmentVariable($_, 'User')) }
+```
+
+Run the deployment environment regression independently with:
+
+```powershell
+./poc/wsl-dev/test-deploy-user.ps1
+```
+
+It checks native direnv 2.37.1 in a no-profile child built from persisted user
+values, with `DIRENV_CONFIG` removed so `XDG_CONFIG_HOME` must resolve the same
+adapter directory, and in a profile-loaded child with inherited deployment
+values removed. If direnv reports `couldn't find a configuration directory for
+direnv`, activate the current session with the command above and rerun the
+test. `DIRENV_CONFIG` points directly to `$env:LOCALAPPDATA\wsl-dev\direnv`;
+`XDG_CONFIG_HOME` points to `$env:LOCALAPPDATA\wsl-dev`, so its `direnv`
+subdirectory resolves to that identical location rather than a second config.
+
 The adapter and launcher are installed below `$env:LOCALAPPDATA\wsl-dev`; no
 global `PATH` change is made. The script records the original files and user
 environment values in `$env:LOCALAPPDATA\wsl-dev\state\deployment.json` and

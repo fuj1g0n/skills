@@ -15,6 +15,15 @@ $runtimeFixtureSource = Join-Path $root "fixture"
 $testRoot = Join-Path $env:TEMP "wsl dev measure $([guid]::NewGuid().ToString('N'))"
 $adapterPublish = Join-Path $testRoot "wsl-adapter"
 $gitAdapterPublish = Join-Path $testRoot "git-adapter"
+$managedEnvironmentNames = @(
+    Get-ChildItem Env: | Where-Object {
+        $_.Name -like "DIRENV_*" -or $_.Name -like "WSL_DEV_*" -or $_.Name -like "XDG_*"
+    } | Select-Object -ExpandProperty Name
+)
+$originalManagedEnvironment = @{}
+foreach ($environmentName in $managedEnvironmentNames) {
+    $originalManagedEnvironment[$environmentName] = [Environment]::GetEnvironmentVariable($environmentName, "Process")
+}
 
 function Find-NativeDirenv {
     if ($DirenvPath) {
@@ -44,8 +53,14 @@ function Copy-Fixture([string]$Source, [string]$Destination) {
 
 function Reset-DirenvEnvironment {
     Get-ChildItem Env: | Where-Object {
-        $_.Name -like "DIRENV_*" -or $_.Name -like "WSL_DEV_*"
+        $_.Name -like "DIRENV_*" -or $_.Name -like "WSL_DEV_*" -or $_.Name -like "XDG_*"
     } | Remove-Item
+    foreach ($environmentName in $originalManagedEnvironment.Keys) {
+        [Environment]::SetEnvironmentVariable(
+            $environmentName,
+            $originalManagedEnvironment[$environmentName],
+            "Process")
+    }
 }
 
 function Get-Statistics([double[]]$Values) {
