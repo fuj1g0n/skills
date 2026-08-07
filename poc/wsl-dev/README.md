@@ -8,8 +8,8 @@ complete development process tree run in a WSL Nix devShell.
 From PowerShell in any Windows project containing an allowed `.envrc`:
 
 ```powershell
-$env:WSL_DEV_DISTRO = "Ubuntu-24.04"
-path\to\wsl-dev.ps1 shell
+direnv allow .
+wsl-dev shell
 ```
 
 The resulting Bash session starts in the same project through `/mnt/c`, and the
@@ -20,8 +20,15 @@ inside WSL.
 Windows editor tasks can use the non-interactive form:
 
 ```powershell
-path\to\wsl-dev.ps1 exec -Distribution Ubuntu-24.04 npm test
+wsl-dev exec nix --version
+wsl-dev exec npm test
 ```
+
+Native Windows direnv is metadata-only. `direnv allow` authorizes `.envrc` and
+the hook exports `WSL_DEV_*` launcher metadata; it intentionally does not make
+Linux `nix` or `/nix/store` executable paths available to Win32. Use
+`wsl-dev shell` for interactive work and `wsl-dev exec <command>` for one-shot
+commands.
 
 ## Automated check
 
@@ -34,6 +41,22 @@ Bash grandchild. Every level checks the same devShell marker and Linux working
 directory. The test copies the fixture to an isolated Windows temporary
 directory so bare `use flake` is evaluated outside the repository's Git index.
 It also confirms that the Windows `PATH` is not modified with Nix store paths.
+
+The separate all-command comparison is isolated and opt-in:
+
+```powershell
+./poc/wsl-dev/test-all-command-forwarding.ps1 -Samples 3
+```
+
+It enumerates every executable name exposed by the fixture devShell, generates
+temporary PowerShell shims, and compares ordinary PowerShell lookup with gated
+PowerShell and Git Bash command-not-found forwarding. It covers command
+collisions, complex argv, stderr, exit status, stdin, stale regeneration,
+latency, and WSL child/watcher process shape. It does not install a global
+forwarder. The current `.ps1` shim intentionally records two negative results:
+PowerShell pipeline stdin is not inherited as native stdin, and Git Bash does
+not resolve the shim by its extensionless ordinary name. Git Bash interception
+also demonstrates MSYS rewriting of `/mnt/c/...` arguments.
 
 ## Native direnv evaluator adapter
 
@@ -90,13 +113,15 @@ test. `DIRENV_CONFIG` points directly to `$env:LOCALAPPDATA\wsl-dev\direnv`;
 subdirectory resolves to that identical location rather than a second config.
 
 The adapter and launcher are installed below `$env:LOCALAPPDATA\wsl-dev`; no
-global `PATH` change is made. The script records the original files and user
-environment values in `$env:LOCALAPPDATA\wsl-dev\state\deployment.json` and
-creates timestamped backups before changing existing files. It merges managed
-blocks rather than replacing the PowerShell profile or WSL global `direnvrc`.
-Repeated installation is idempotent: an adapter source fingerprint includes the
-project inputs, .NET SDK version, and publish options, so an unchanged adapter
-is not rebuilt or backed up again.
+global `PATH` change is made. A `wsl-dev` function in the managed PowerShell
+profile block invokes the installed launcher and forwards all arguments. The
+script records the original files and user environment values in
+`$env:LOCALAPPDATA\wsl-dev\state\deployment.json` and creates timestamped
+backups before changing existing files. It merges managed blocks rather than
+replacing the PowerShell profile or WSL global `direnvrc`. Repeated installation
+is idempotent: an adapter source fingerprint includes the project inputs, .NET
+SDK version, and publish options, so an unchanged adapter is not rebuilt or
+backed up again.
 
 In a Windows-hosted project, keep `.envrc` portable and allow it independently
 in native direnv:
@@ -104,8 +129,7 @@ in native direnv:
 ```powershell
 Get-Content -Raw .envrc # exactly: use flake
 direnv allow .
-direnv export pwsh | Invoke-Expression
-& "$env:LOCALAPPDATA\wsl-dev\bin\wsl-dev.ps1" exec npm test
+wsl-dev exec npm test
 ```
 
 The PowerShell profile also installs the normal native `direnv hook pwsh`, so
@@ -113,6 +137,24 @@ changing location performs the metadata-only export automatically in a new
 PowerShell session. The adapter sets an internal flag only for metadata
 evaluation. The conditional proxy is therefore inactive when `wsl-dev` enters
 the runtime, where the existing WSL nix-direnv `use_flake` remains authoritative.
+
+If `direnv allow` succeeds but PowerShell reports `nix` is not recognized, the
+boundary is working as designed. Check and enter it explicitly:
+
+```powershell
+Get-ChildItem Env:WSL_DEV_*
+Get-Command wsl-dev
+wsl-dev exec nix --version
+wsl-dev shell
+```
+
+If `Get-Command wsl-dev` fails immediately after deployment, open a new
+profile-loaded PowerShell or run `. $PROFILE`. A `-NoProfile` process does not
+load the function; it can still invoke
+`& "$env:LOCALAPPDATA\wsl-dev\bin\wsl-dev.ps1" exec nix --version` directly.
+No implicit Windows `nix` shim is installed: such a shim would hide the process
+boundary and could not preserve arbitrary argv, TTY, signal, and descendant
+process semantics as clearly as the explicit launcher.
 
 Preview or perform exact rollback with:
 

@@ -306,6 +306,68 @@ Write-Output "config=$actual"
     Write-Output "$ProbeName passed: $($stdout.Trim() -replace "`r?`n", "; ")"
 }
 
+function Invoke-WslDevCommandProbe(
+    [string]$ProbeName,
+    [switch]$LoadProfile
+) {
+    $process = [Diagnostics.ProcessStartInfo]::new()
+    $process.FileName = (Get-Process -Id $PID).Path
+    $process.WorkingDirectory = $installRoot
+    $process.UseShellExecute = $false
+    $process.RedirectStandardOutput = $true
+    $process.RedirectStandardError = $true
+    if (-not $LoadProfile) {
+        $process.ArgumentList.Add("-NoProfile")
+    }
+    $process.ArgumentList.Add("-NonInteractive")
+    $process.ArgumentList.Add("-Command")
+    $process.ArgumentList.Add(@'
+$ErrorActionPreference = "Stop"
+$expectedLauncher = $env:WSL_DEV_COMMAND_PROBE_LAUNCHER
+$command = Get-Command wsl-dev -ErrorAction SilentlyContinue
+$expectFunction = $env:WSL_DEV_COMMAND_PROBE_EXPECT_FUNCTION -eq "1"
+if ($expectFunction) {
+    if ($null -eq $command -or $command.CommandType -ne "Function") {
+        throw "wsl-dev did not resolve to the profile function."
+    }
+}
+elseif ($null -ne $command) {
+    throw "wsl-dev was unexpectedly available without the PowerShell profile."
+}
+$scriptCommand = Get-Command $expectedLauncher -ErrorAction Stop
+if ($scriptCommand.CommandType -ne "ExternalScript") {
+    throw "The installed launcher did not resolve as an external script."
+}
+$missingProject = Join-Path $env:TEMP "wsl-dev-command-probe-missing"
+try {
+    if ($expectFunction) {
+        wsl-dev exec -ProjectDirectory $missingProject ignored
+    }
+    else {
+        & $expectedLauncher exec -ProjectDirectory $missingProject ignored
+    }
+    throw "The launcher unexpectedly accepted a missing project path."
+}
+catch {
+    if ($_.Exception.Message -notmatch [regex]::Escape($missingProject)) {
+        throw
+    }
+}
+Write-Output "command=$($command.CommandType)"
+Write-Output "launcher=$($scriptCommand.CommandType)"
+'@)
+    $process.Environment["WSL_DEV_COMMAND_PROBE_LAUNCHER"] = $launcherPath
+    $process.Environment["WSL_DEV_COMMAND_PROBE_EXPECT_FUNCTION"] = $(if ($LoadProfile) { "1" } else { "0" })
+    $child = [Diagnostics.Process]::Start($process)
+    $stdout = $child.StandardOutput.ReadToEnd()
+    $stderr = $child.StandardError.ReadToEnd()
+    $child.WaitForExit()
+    if ($child.ExitCode -ne 0) {
+        throw "$ProbeName failed with exit code $($child.ExitCode): $stderr$stdout"
+    }
+    Write-Output "$ProbeName passed: $($stdout.Trim() -replace "`r?`n", "; ")"
+}
+
 if ($Action -eq "Rollback") {
     if (-not (Test-Path -LiteralPath $statePath)) {
         throw "No deployment state exists at $statePath."
@@ -344,6 +406,8 @@ if ($Action -eq "Verify") {
     Invoke-DirenvConfigProbe "Persisted user environment no-profile probe" $direnv.Source
     Invoke-DirenvConfigProbe "Sanitized DIRENV_CONFIG XDG fallback probe" $direnv.Source -OmitDirenvConfig
     Invoke-DirenvConfigProbe "Profile-loaded probe" $direnv.Source -LoadProfile
+    Invoke-WslDevCommandProbe "No-profile installed launcher probe"
+    Invoke-WslDevCommandProbe "Profile-loaded launcher command probe" -LoadProfile
     Write-Output "Deployment environment verification passed."
     return
 }
@@ -416,6 +480,9 @@ $profileBody = @"
 `$env:XDG_CACHE_HOME = Join-Path `$env:LOCALAPPDATA "wsl-dev\xdg\cache"
 `$env:XDG_DATA_HOME = Join-Path `$env:LOCALAPPDATA "wsl-dev\xdg\data"
 `$env:WSL_DEV_DISTRO = "$Distribution"
+function global:wsl-dev {
+    & (Join-Path `$env:LOCALAPPDATA "wsl-dev\bin\wsl-dev.ps1") @args
+}
 Invoke-Expression ((& direnv.exe hook pwsh) -join [Environment]::NewLine)
 "@
 $profileContent = Merge-MarkerBlock (Get-Text $profilePath) $profileStart $profileEnd $profileBody
@@ -444,24 +511,42 @@ $userEnvironment = [ordered]@{
     XDG_DATA_HOME = Join-Path $installRoot "xdg\data"
     WSL_DEV_DISTRO = $Distribution
 }
+$userEnvironmentChanged = $false
 foreach ($entry in $userEnvironment.GetEnumerator()) {
-    Write-Plan "Set user environment $($entry.Key)=$($entry.Value)"
+    $currentUserValue = [Environment]::GetEnvironmentVariable($entry.Key, "User")
+    if ($currentUserValue -ceq $entry.Value) {
+        Write-Plan "No change: user environment $($entry.Key)=$($entry.Value)"
+    }
+    else {
+        Write-Plan "Set user environment $($entry.Key)=$($entry.Value)"
+        $userEnvironmentChanged = $true
+    }
     if (-not $DryRun) {
-        [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value, "User")
-        [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value, "Process")
+        if ($currentUserValue -cne $entry.Value) {
+            [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value, "User")
+        }
+        if ([Environment]::GetEnvironmentVariable($entry.Key, "Process") -cne $entry.Value) {
+            [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value, "Process")
+        }
     }
 }
 if (-not $DryRun) {
-    Send-EnvironmentChange
+    if ($userEnvironmentChanged) {
+        Send-EnvironmentChange
+    }
     Invoke-DirenvConfigProbe "Persisted user environment no-profile probe" $direnv.Source
     Invoke-DirenvConfigProbe "Sanitized DIRENV_CONFIG XDG fallback probe" $direnv.Source -OmitDirenvConfig
     Invoke-DirenvConfigProbe "Profile-loaded probe" $direnv.Source -LoadProfile
+    Invoke-WslDevCommandProbe "No-profile installed launcher probe"
+    Invoke-WslDevCommandProbe "Profile-loaded launcher command probe" -LoadProfile
 }
 
 Write-Output "Experimental wsl-dev deployment complete."
 Write-Output "Adapter: $adapterPath"
 Write-Output "Launcher: $launcherPath"
+Write-Output "PowerShell command: wsl-dev shell | wsl-dev exec <command>"
 Write-Output "Native direnv config: $configDirectory"
 Write-Output "WSL direnvrc: ${Distribution}:$wslDirenvrcPath"
 Write-Output "Activate this already-open PowerShell: $(Get-CurrentSessionActivation)"
+Write-Output 'Load the wsl-dev command in this already-open PowerShell: . $PROFILE'
 Write-Output "Rollback: & '$PSCommandPath' -Action Rollback"

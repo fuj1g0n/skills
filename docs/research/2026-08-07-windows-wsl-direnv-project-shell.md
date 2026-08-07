@@ -154,6 +154,80 @@ interface through B, while every development command enters D. The project
 keeps ordinary `use flake`, Win32 receives neither `/nix/store` nor Linux
 executable paths, and the complete development process tree stays in WSL.
 
+## 2026-08-08 all-command forwarding measurements
+
+### Method
+
+`poc/wsl-dev/test-all-command-forwarding.ps1` copied the runtime fixture to a
+unique Windows temporary path containing spaces and verified that its `.envrc`
+was exactly `use flake`. It enumerated executable files from the activated WSL
+devShell `PATH`, excluding `/mnt` paths, and generated project-local PowerShell
+shims in another temporary directory. No shim or interception was installed
+globally. Three warm wall-clock samples were collected on the same non-isolated
+machine as the earlier measurements.
+
+The probe exercised ordinary invocation of `just`, `nix`, `node`, `python`,
+`bash`, and a devShell-only command; spaces, a literal quote, Unicode, an empty
+argument, a Windows path, and a WSL path; stderr; exit 23; cwd; pipeline stdin;
+an existing `find` collision; stale-shim regeneration; and PowerShell and Git
+Bash resolution. It also observed a Bash child and a Node `--watch` parent/child
+pair with `ps` inside WSL.
+
+### Exact observations
+
+| Observation | Result |
+|---|---|
+| Executable names discovered / PowerShell shims generated | 1,214 / 1,214 |
+| Unchanged PowerShell resolves `wsl-probe` | No |
+| Unchanged Git Bash resolves `wsl-probe` | No |
+| A. PowerShell shim warm median | 809.8 ms focused run; 1,325.7 ms full-suite rerun (3 samples each) |
+| A. argv, stderr, cwd, exit 23 | Pass |
+| A. pipeline stdin | **Fail**; a PowerShell script pipeline is object input, not inherited native stdin |
+| A. collision | Generated `find.ps1` won before two native `find.exe` candidates |
+| A. Git Bash ordinary name | **Fail**; Git Bash did not resolve the generated `.ps1` name |
+| A. stale regeneration | Pass; an injected stale shim was removed |
+| B. PowerShell command-not-found warm median | 887.8 ms focused run; 895.2 ms full-suite rerun (3 samples each) |
+| B. PowerShell collision | Existing `C:\Program Files\coreutils\bin\find.exe` won; no fallback ran |
+| B. Git Bash gate | Pass; disabled handler returned 127 |
+| B. Git Bash argv/stderr/exit | Spaces, quote, empty, Unicode, Windows path, stderr, and exit 23 passed |
+| B. Git Bash WSL path | **Fail**; MSYS rewrote `/mnt/c/...` below `C:/Program Files/Git/...` |
+| Runtime executable | Nix Node 24.18.1 was an x86-64 Linux ELF under `/nix/store` |
+| Watcher tree | WSL Nix Node `--watch` parent and WSL Nix Node child |
+| Native Nix | No `nix.exe` found |
+| Win32 `PATH` contains `/nix/store` | No |
+
+The fixture used redirected automation. It did not automate Ctrl+C, terminal
+resize, job control, or a true interactive TTY. Those remain acceptance checks
+for `wsl-dev shell`; the test does not claim they pass through per-command
+PowerShell shims or command-not-found handlers.
+
+### Architecture matrix for all commands
+
+| Option | Pros | Cons | Conclusion |
+|---|---|---|---|
+| A. Generated native Windows shim directory | Ordinary PowerShell names; explicit project scope; can choose collision precedence; stale entries can be synchronized | Must enumerate executable files; 1,214 files in this fixture; `.ps1` form loses pipeline stdin and is not a Git Bash ordinary command; no aliases/functions/builtins/completion; regeneration and writable-shim security surface | Optional PowerShell convenience prototype, not complete semantics |
+| B. Command-not-found interception | No per-command files; forwards newly added missing executables; existing Windows commands remain stable | Shell-specific installation; cannot select WSL for collisions or builtins; typo forwarding expands code-execution surface; Git Bash applies MSYS conversion | Optional, gated convenience for missing names only |
+| C. Broker/daemon plus lightweight shims | Could amortize WSL and direnv startup and centralize policy | Still needs native command files or interception; adds authentication, lifecycle, stale state, multiplexed I/O, cancellation, and compromise blast radius; does not recover shell semantics | Not justified by 0.81-0.89 s prototype latency |
+| D. WSL active interactive shell | Normal command lookup; aliases, functions, builtins, completion, TTY, signals, job control, and all descendants stay Linux-native | User crosses into WSL; Windows-native editor integrations need WSL execution or attachment | Maximum compatibility and reliability; recommended |
+| E. Git Bash evaluator/functions/shims | Familiar Windows-hosted Bash interface; functions can avoid thousands of files | MSYS mutates Linux-looking paths; generated command set is shell-local and stale; collision policy and Bash dialect differ from runtime WSL | Inferior to entering WSL |
+| F. Native Windows package alternatives | Native process, path, debugger, and terminal behavior | Nix does not support native Windows; no `nix.exe` was present; package versions and artifacts diverge from the Nix devShell | Separate toolchain, not devShell transparency |
+| G. PTY-aware proxy or shell replacement | Could improve one-command terminal behavior and signal forwarding | Reimplements ConPTY/PTY, resize, signals, job control, shell state, quoting, and completion; still needs resolution interception; effectively rebuilds a remote shell | Use `wsl-dev shell`, Windows Terminal WSL profile, or VS Code WSL instead |
+
+Unchanged native command resolution cannot satisfy all-command semantics.
+PowerShell and Git Bash both require a resolvable native command artifact,
+function/alias, or a shell interception hook before they can invoke WSL. An ELF
+file under `/nix/store` cannot be placed on Win32 `PATH` and executed. Moreover,
+enumerating executable files still excludes aliases, functions, builtins,
+completion, dynamic shell state, and commands added after generation.
+
+The maximum-compatibility recommendation is D: make WSL the active interactive
+shell through `wsl-dev shell`, a Windows Terminal WSL profile, or VS Code WSL,
+with normal WSL direnv/nix-direnv. The maximum Windows-shell convenience option
+is a project-scoped, explicitly enabled B handler for missing names, with A only
+when deliberate collision shadowing is more important than file count and
+regeneration. Automation should continue to use explicit `wsl-dev exec`.
+Neither convenience layer should be globally enabled by default.
+
 ## Findings
 
 ### Exporting a Nix environment to Windows is not viable
@@ -378,8 +452,11 @@ the returned environment does not remove that code-execution boundary.
 The prototype was installed for one Windows user under `LOCALAPPDATA`, without
 adding a directory to `PATH`. Native direnv 2.37.1 used the installed adapter as
 its configured `bash_path`; explicit user-scoped XDG directories resolved the
-Windows config-dir limitation. The normal PowerShell location hook loaded in a
-new PowerShell 7 process.
+Windows config-dir limitation. The managed PowerShell profile block loads the
+normal location hook and defines a `wsl-dev` function that invokes the installed
+launcher with argument forwarding. A profile-loaded process resolves the
+function before applications; a `-NoProfile` process intentionally does not,
+but can execute the installed script by absolute path.
 
 The Windows-side global `direnvrc` is evaluated by WSL Bash and sources the
 actual Ubuntu user's global `direnvrc`. That file retains its existing
@@ -400,6 +477,15 @@ The deployment script is idempotent, supports dry-run and rollback, merges
 managed blocks, and records initial state plus timestamped backups. This closes
 the local installation gap only; it does not resolve the production-readiness
 limitations above.
+
+The observed `direnv allow` success followed by PowerShell's “`nix` is not
+recognized” error is expected, not an evaluator failure. The native hook had
+active `WSL_DEV_ENABLED`, `WSL_DEV_DISTRO`, and `WSL_DEV_PROJECT` metadata while
+the parent Win32 `PATH` remained unchanged and contained no `/nix/store` entry.
+The practical entry points are `wsl-dev shell` and
+`wsl-dev exec nix --version`. A Windows `nix` shim was rejected because it
+would make the control-plane/runtime distinction implicit and provide weaker
+semantics for arbitrary commands and interactive sessions.
 
 ## Options
 
