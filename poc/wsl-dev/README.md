@@ -53,6 +53,52 @@ merges that allowlist, and rejects `/nix/store` in evaluator `PATH` or metadata.
 It never makes Linux tools available to Win32; `shell` and `exec` remain the
 only runtime entry points.
 
+## Experimental user deployment
+
+The deployment is experimental and currently pins the control plane to native
+direnv 2.37.1. Preview the user-scoped changes, then install the adapter,
+launcher, native configuration, PowerShell hook, and conditional WSL metadata
+proxy:
+
+```powershell
+./poc/wsl-dev/deploy-user.ps1 -Distribution Ubuntu-24.04 -DryRun
+./poc/wsl-dev/deploy-user.ps1 -Distribution Ubuntu-24.04
+```
+
+The adapter and launcher are installed below `$env:LOCALAPPDATA\wsl-dev`; no
+global `PATH` change is made. The script records the original files and user
+environment values in `$env:LOCALAPPDATA\wsl-dev\state\deployment.json` and
+creates timestamped backups before changing existing files. It merges managed
+blocks rather than replacing the PowerShell profile or WSL global `direnvrc`.
+
+In a Windows-hosted project, keep `.envrc` portable and allow it independently
+in native direnv:
+
+```powershell
+Get-Content -Raw .envrc # exactly: use flake
+direnv allow .
+direnv export pwsh | Invoke-Expression
+& "$env:LOCALAPPDATA\wsl-dev\bin\wsl-dev.ps1" exec npm test
+```
+
+The PowerShell profile also installs the normal native `direnv hook pwsh`, so
+changing location performs the metadata-only export automatically in a new
+PowerShell session. The adapter sets an internal flag only for metadata
+evaluation. The conditional proxy is therefore inactive when `wsl-dev` enters
+the runtime, where the existing WSL nix-direnv `use_flake` remains authoritative.
+
+Preview or perform exact rollback with:
+
+```powershell
+./poc/wsl-dev/deploy-user.ps1 -Action Rollback -DryRun
+./poc/wsl-dev/deploy-user.ps1 -Action Rollback
+```
+
+Rollback restores the original PowerShell profile, native config files, WSL
+`direnvrc`, and user environment values, then removes the installed adapter and
+launcher. Timestamped backups and deployment state remain under
+`$env:LOCALAPPDATA\wsl-dev` for audit and manual recovery.
+
 Run the contract and negative-path test with:
 
 ```powershell
