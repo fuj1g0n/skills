@@ -20,11 +20,139 @@ executables, must run in WSL. Access to selected commands is insufficient.
 * Windows build `10.0.26200.8893`.
 * WSL `2.9.4.0`, Ubuntu 24.04, kernel
   `6.18.35.2-microsoft-standard-WSL2`.
+* PowerShell `7.6.4`, .NET SDK `10.0.302`, and Git for Windows Bash
+  `5.3.15(1)-release` (`x86_64-pc-cygwin`).
 * Determinate Nix `2.34.7` and direnv `2.37.1` in WSL.
 * `%USERPROFILE%/.wslconfig` sets `virtiofs=true`; `/mnt/c` is virtiofs.
-* No native Windows direnv was installed permanently. The official direnv
-  `2.37.1` Windows binary was downloaded to a temporary directory and verified
-  against its published SHA-256 digest for the native integration experiment.
+* winget-installed native Windows direnv `2.37.1` at
+  `%LOCALAPPDATA%\Microsoft\WinGet\Packages\direnv.direnv_Microsoft.Winget.Source_8wekyb3d8bbwe\direnv.exe`.
+
+The winget package directory was present in both the current process and User
+`PATH`, so this VS Code terminal did not need a refresh. A terminal that was
+already running before winget updated User `PATH` may need to be reopened; the
+binary can be invoked by its package path until then. `direnv status` worked
+when explicit XDG directories were set and reported the WindowsApps
+`bash.exe` (the WSL launcher) as the default `bash_path`. Without XDG variables
+it failed with `couldn't find a configuration directory for direnv`.
+
+Native `direnv hook` succeeded for `pwsh`, Bash, zsh, fish, tcsh, and Elvish on
+this binary. `powershell`, `cmd`, and `nu` returned `unknown target shell`.
+
+## 2026-08-07 installed-direnv measurements
+
+### Method
+
+`poc/wsl-dev/measure-architectures.ps1` used only copies under a uniquely named
+Windows temporary directory containing spaces. The project `.envrc` remained
+the ordinary one-line `use flake` contract. A temporary global `use_flake`
+proxy watched `flake.nix` and emitted metadata containing an empty value,
+spaces, a newline, shell metacharacters, and `日本語-✓`.
+
+For A and B, each cold sample removed `DIRENV_DIFF`, `DIRENV_FILE`, and
+`DIRENV_WATCHES` before `direnv export json`, forcing evaluator execution. Each
+warm sample followed an applied `direnv export pwsh` and measured the no-change
+hook path. These are process-warm measurements, not machine-reboot cold starts.
+For D, a first sample used a fresh copied fixture whose Nix environment had not
+yet been evaluated; warm samples reused one primed nix-direnv cache. Seven
+wall-clock samples were taken with `Measure-Command`. No claims about CPU or
+memory precision are made.
+
+The PowerShell harness sets native-command encoding to BOM-less UTF-8. Before
+that setting, PowerShell 7.6.4 mis-decoded otherwise valid UTF-8 JSON containing
+the Unicode probe. Raw redirected bytes were valid UTF-8
+(`E6-97-A5-E6-9C-AC-E8-AA-9E-2D-E2-9C-93`). Both compiled adapters now also
+declare UTF-8 for child stdout/stderr and their JSON stdout.
+
+### Latency results
+
+| Option | Measurement | Individual samples (ms) | Median | Range |
+|---|---|---|---:|---:|
+| A. Git Bash filter | cold evaluator | 12936.0, 10147.8, 4447.2, 3143.5, 3703.4, 2598.5, 3428.7 | 3703.4 | 2598.5-12936.0 |
+| A. Git Bash filter | warm no-change hook | 185.5, 198.2, 101.8, 211.5, 146.6, 177.5, 156.0 | 177.5 | 101.8-211.5 |
+| B. WSL Bash adapter | cold evaluator | 5144.7, 9175.4, 3115.6, 6540.0, 3228.3, 2710.0, 2472.8 | 3228.3 | 2472.8-9175.4 |
+| B. WSL Bash adapter | warm no-change hook | 508.8, 187.4, 369.7, 194.6, 218.3, 702.1, 514.3 | 369.7 | 187.4-702.1 |
+| D. direct `wsl-dev exec` | first fresh fixture | 11640.2, 8378.1, 15105.2, 9553.5, 44468.5, 31431.6, 14489.3 | 14489.3 | 8378.1-44468.5 |
+| D. direct `wsl-dev exec` | warm cached exec | 16103.4, 5063.0, 4725.7, 4677.2, 4591.5, 7567.6, 4427.9 | 4725.7 | 4427.9-16103.4 |
+
+The large ranges are real observations on a non-isolated development machine.
+They support only order-of-magnitude and workflow comparisons. A/B warm
+results measure native hook checks; D warm results enter the real Nix devShell
+and execute a command, so the rows do not represent equivalent work.
+
+### Behavior results
+
+| Behavior | A. Git Bash filter | B. WSL Bash adapter | C. Alternative interpreter | D. direct `wsl-dev` |
+|---|---|---|---|---|
+| Ordinary `use flake` project contract | Pass through global proxy | Pass through global proxy | Not executable on this machine | Pass through WSL nix-direnv |
+| Native allow and changed-`.envrc` block/re-allow | Pass | Pass | Not tested | WSL allow passes |
+| Native reload | Pass | Pass | Not tested | Not applicable |
+| Proxy `watch_file flake.nix` reaches native hook | **Fail** | **Fail** | Not tested | WSL nix-direnv owns real watches |
+| Windows path containing spaces | Pass; MSYS path form | Pass; `/mnt/c/...` form | Not tested | Pass; `/mnt/c/...` form |
+| Empty, mixed-case, multiline, special, Unicode values | Pass after explicit UTF-8 handling | Pass after explicit UTF-8 handling | Not tested | Runtime environment, not exported to Win32 |
+| Exit code and stderr | Pass; proxy exit 23 and marker propagated | Pass; proxy exit 23 and marker propagated | Not tested | Pass; runtime exit 23 and marker propagated |
+| Repeated invocation | Pass | Pass | Not tested | Pass |
+| `/nix/store` or Linux `PATH` enters Win32 | No | No; negative test fails closed | Not tested | No |
+| Only intended metadata crosses evaluator boundary | `WSL_DEV_*` plus native `DIRENV_*` state | `WSL_DEV_*` plus native `DIRENV_*` state | Not tested | No environment import |
+| Guarantees complete dev descendants in WSL | No; control plane only | No; control plane only | No executable evidence | Yes, when commands enter through `shell/exec` |
+
+The proxy watch failure is caused by the filtering boundary: evaluator-side
+`DIRENV_WATCHES` is intentionally not allowlisted. Native direnv still watches
+the project `.envrc`, blocks it after a content change, and supports reload.
+This is acceptable only while Windows metadata is static; real flake watches
+and cache invalidation remain WSL nix-direnv's responsibility.
+
+The A and B failure fixture printed `proxy failure marker` and native direnv
+reported `exit status 23`. Setting `bash_path = "wsl.exe"` directly failed as
+the negative control with `direnv: error exit status 0xffffffff`, confirming
+that the WSL launcher is not itself a Bash evaluator adapter.
+
+No suitable C candidate was installed: `nu`, `xonsh`, BusyBox, Cygwin command
+entry points, dash, and fish were absent from Windows `PATH`. The only default
+Windows `bash.exe` was the WSL launcher, covered by the failed negative control.
+Git Bash is executable but is Option A, not an embedded interpreter. Installing
+a heavyweight shell runtime solely for this matrix was intentionally avoided.
+Even if installed, a candidate would need compatibility with direnv's Bash
+functions, arrays, traps, process substitution, and recursive direnv calls.
+
+### Process and resource shape
+
+A cold evaluation starts native direnv, the compiled filter, and Git Bash. B
+starts native direnv, the compiled adapter, `wsl.exe`, and WSL Bash. D performs
+a WSL path conversion and then starts `wsl.exe`, the WSL `/init` relay, and the
+runtime Bash. A runtime snapshot reported Bash in `/mnt/c/...` with
+`POC_DEV_SHELL=wsl-direnv` and `/init` as its relay parent. The focused runtime
+test provides the stronger descendant check: npm -> Node -> uv -> Python ->
+Bash all observed the same marker and WSL cwd. A/B only decide metadata; neither
+can constrain later Win32 commands. Complete descendant containment therefore
+depends on entering through D's `wsl-dev shell/exec` runtime boundary.
+
+### Reproduction
+
+```powershell
+$direnv = (Get-Command direnv.exe).Source
+direnv version
+direnv status
+./poc/wsl-dev/measure-architectures.ps1 -DirenvPath $direnv -Samples 7
+./poc/wsl-dev/test-wsl-bash-adapter.ps1
+./poc/wsl-dev/test-poc.ps1
+```
+
+The scripts use isolated temporary fixtures and do not read or modify the
+repository root `.envrc`.
+
+### Pros and cons under the fixed constraints
+
+| Option | Pros | Cons | Result |
+|---|---|---|---|
+| A. Git Bash/MSYS filter | Fastest measured warm no-change median; directly accepts `-c`; can reconstruct Win32 state and allowlist metadata | Cold median 3.70 s with wide variance; MSYS changes paths and environment representation before filtering; adds a Bash unlike runtime WSL; does not contain descendants; proxy watches do not cross | Executable, but not recommended |
+| B. WSL Bash adapter | Meets native-direnv interface; preserves ordinary `use flake`; evaluates with runtime Bash family; emits only metadata; rejects Nix paths; translates spaced paths correctly | Cold median 3.23 s and warm median 0.37 s; version-sensitive generated-script translation; extra WSL process; separate allow state; proxy watches do not cross; adapter alone does not contain descendants | Recommended Windows control plane |
+| C. Embedded/alternative Bash | Could avoid WSL startup if a fully compatible implementation existed | No installed suitable candidate; direct WSL launcher fails; Bash compatibility and security surface is large; no execution evidence | Blocked/rejected |
+| D. direct `wsl-dev shell/exec` | Simplest runtime; real nix-direnv watches/cache; no environment import; measured complete WSL descendant tree; preserves Linux artifacts and semantics | Violates native-direnv-as-interface if used alone; first median 14.49 s and warm command median 4.73 s in this fixture; NTFS/virtiofs overhead remains | Required runtime, fallback control plane |
+
+The evidence supports B plus D: native Windows direnv remains a metadata-only
+interface through B, while every development command enters D. The project
+keeps ordinary `use flake`, Win32 receives neither `/nix/store` nor Linux
+executable paths, and the complete development process tree stays in WSL.
 
 ## Findings
 

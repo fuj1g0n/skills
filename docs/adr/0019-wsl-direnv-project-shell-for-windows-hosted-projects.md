@@ -161,6 +161,22 @@ The repository-local `poc/wsl-dev` validates the core execution model:
   were preserved.
 * A negative fixture injected `/nix/store/forbidden/bin` into the WSL evaluator
   `PATH`; the adapter failed closed and native direnv emitted no Linux path.
+* The winget-installed native direnv 2.37.1 was exercised directly from its
+  package path. Its current and User `PATH` entries were active, its PowerShell
+  hook contract was present, and explicit XDG directories remained required.
+* Seven-sample installed-binary measurements observed cold evaluator medians
+  of 3.70 seconds for the Git Bash filter and 3.23 seconds for the WSL Bash
+  adapter. Warm no-change hook medians were 0.18 and 0.37 seconds respectively;
+  ranges were wide on the non-isolated development machine.
+* Both filtered evaluators preserved empty, mixed-case, multiline, special,
+  and Unicode metadata in a temporary Windows path containing spaces. Both
+  propagated exit 23 and stderr, supported allow/re-allow and reload, and
+  emitted no Linux executable path or non-allowlisted evaluator variable.
+* Evaluator-side `watch_file flake.nix` state did not cross either allowlist.
+  Native direnv still blocked a changed `.envrc`; WSL nix-direnv remains the
+  owner of real flake watches and runtime cache invalidation.
+* No installed embedded or alternative Bash candidate was suitable. Directly
+  setting `bash_path = "wsl.exe"` failed with exit status `0xffffffff`.
 
 Keep this ADR proposed until these remaining checks pass:
 
@@ -194,6 +210,8 @@ Keep this ADR proposed until these remaining checks pass:
   semantics and merge only explicit metadata.
 * Bad, because it translates a version-specific generated evaluator script and
   runs a WSL process on native direnv evaluation.
+* Bad, because filtered evaluator watch state does not reach native direnv;
+  Windows launcher metadata must remain static.
 
 ### Native direnv with a Git Bash filtering bridge
 
@@ -201,6 +219,8 @@ Keep this ADR proposed until these remaining checks pass:
 * Bad, because MSYS rewrites `Path`/`PATH`, casing, and path values before the
   bridge can decide what to retain.
 * Bad, because it adds a second Bash environment that differs from WSL runtime.
+* Bad, because the measured cold path was not faster than the WSL adapter and
+  showed substantial variance.
 
 ### Embedded Bash-compatible interpreter
 
@@ -209,11 +229,15 @@ Keep this ADR proposed until these remaining checks pass:
   and recursive direnv commands that partial shell interpreters need not match.
 * Bad, because compatibility and security maintenance exceed the bridge's
   metadata-only purpose.
+* Bad, because no suitable installed candidate was available for execution on
+  the measured machine.
 
 ### Bypass native direnv
 
 * Good, because `wsl-dev shell/exec` already provides the correct runtime with
   the fewest control-plane components.
+* Good, because the npm -> Node -> uv -> Python -> Bash fixture measured every
+  descendant inside the same WSL devShell.
 * Bad, because it fails the requirement that native direnv provide visible
   directory state and launcher metadata on Windows.
 

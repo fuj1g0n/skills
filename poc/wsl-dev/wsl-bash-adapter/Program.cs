@@ -1,10 +1,13 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 const string stdlibInvocationPrefix = "eval \"$(\"";
 const string stdlibInvocationSuffix = "\" stdlib)\"";
+
+Console.OutputEncoding = new UTF8Encoding(false);
 
 if (args.Length != 2 || args[0] != "-c")
 {
@@ -64,6 +67,8 @@ var startInfo = new ProcessStartInfo("wsl.exe")
     RedirectStandardInput = true,
     RedirectStandardOutput = true,
     RedirectStandardError = true,
+    StandardOutputEncoding = Encoding.UTF8,
+    StandardErrorEncoding = Encoding.UTF8,
     UseShellExecute = false,
 };
 startInfo.ArgumentList.Add("--distribution");
