@@ -70,6 +70,9 @@ global `PATH` change is made. The script records the original files and user
 environment values in `$env:LOCALAPPDATA\wsl-dev\state\deployment.json` and
 creates timestamped backups before changing existing files. It merges managed
 blocks rather than replacing the PowerShell profile or WSL global `direnvrc`.
+Repeated installation is idempotent: an adapter source fingerprint includes the
+project inputs, .NET SDK version, and publish options, so an unchanged adapter
+is not rebuilt or backed up again.
 
 In a Windows-hosted project, keep `.envrc` portable and allow it independently
 in native direnv:
