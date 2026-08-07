@@ -11,6 +11,7 @@ $root = $PSScriptRoot
 $installRoot = Join-Path $env:LOCALAPPDATA "wsl-dev"
 $adapterDirectory = Join-Path $installRoot "adapter"
 $adapterPath = Join-Path $adapterDirectory "WslBashAdapter.exe"
+$adapterFingerprintPath = Join-Path $adapterDirectory "source.sha256"
 $binDirectory = Join-Path $installRoot "bin"
 $launcherPath = Join-Path $binDirectory "wsl-dev.ps1"
 $configDirectory = Join-Path $installRoot "direnv"
@@ -124,6 +125,27 @@ function Copy-WindowsFileIfChanged([string]$Source, [string]$Destination) {
         New-Item -ItemType Directory -Force -Path (Split-Path $Destination) | Out-Null
         Copy-Item -LiteralPath $Source -Destination $Destination -Force
     }
+}
+
+function Get-AdapterFingerprint {
+    $projectDirectory = Join-Path $root "wsl-bash-adapter"
+    $inputs = Get-ChildItem -LiteralPath $projectDirectory -File -Recurse |
+        Where-Object FullName -NotMatch '[\\/](bin|obj)[\\/]' |
+        Sort-Object FullName
+    $lines = @(
+        "sdk=$((& dotnet.exe --version).Trim())"
+        "configuration=Release"
+        "runtime=win-x64"
+        "self-contained=true"
+        "publish-single-file=true"
+        "debug-type=None"
+    )
+    $lines += $inputs | ForEach-Object {
+        $relativePath = [IO.Path]::GetRelativePath($projectDirectory, $_.FullName).Replace("\", "/")
+        "$relativePath=$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash)"
+    }
+    $bytes = [Text.Encoding]::UTF8.GetBytes($lines -join "`n")
+    return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
 }
 
 function Invoke-Wsl([string]$Script, [string[]]$Arguments = @()) {
@@ -248,18 +270,26 @@ if (-not (Test-Path -LiteralPath $statePath) -and -not $DryRun) {
 Write-Plan "Publish adapter to $adapterPath"
 Write-Plan "Install launcher to $launcherPath"
 if (-not $DryRun) {
-    $publishDirectory = Join-Path $env:TEMP "wsl-dev-publish-$([guid]::NewGuid().ToString('N'))"
-    try {
-        dotnet publish (Join-Path $root "wsl-bash-adapter\WslBashAdapter.csproj") `
-            --nologo --configuration Release --runtime win-x64 --self-contained true `
-            -p:PublishSingleFile=true -p:DebugType=None --output $publishDirectory | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw "Could not publish WslBashAdapter." }
-        Copy-WindowsFileIfChanged (Join-Path $publishDirectory "WslBashAdapter.exe") $adapterPath
-        Copy-WindowsFileIfChanged (Join-Path $root "wsl-dev.ps1") $launcherPath
+    $adapterFingerprint = Get-AdapterFingerprint
+    if ((Test-Path -LiteralPath $adapterPath) -and
+        (Get-Text $adapterFingerprintPath).Trim() -ceq $adapterFingerprint) {
+        Write-Plan "No change: $adapterPath (source fingerprint matches)"
     }
-    finally {
-        Remove-Item -LiteralPath $publishDirectory -Recurse -Force -ErrorAction SilentlyContinue
+    else {
+        $publishDirectory = Join-Path $env:TEMP "wsl-dev-publish-$([guid]::NewGuid().ToString('N'))"
+        try {
+            dotnet publish (Join-Path $root "wsl-bash-adapter\WslBashAdapter.csproj") `
+                --nologo --configuration Release --runtime win-x64 --self-contained true `
+                -p:PublishSingleFile=true -p:DebugType=None --output $publishDirectory | Out-Host
+            if ($LASTEXITCODE -ne 0) { throw "Could not publish WslBashAdapter." }
+            Copy-WindowsFileIfChanged (Join-Path $publishDirectory "WslBashAdapter.exe") $adapterPath
+            Set-WindowsText $adapterFingerprintPath $adapterFingerprint
+        }
+        finally {
+            Remove-Item -LiteralPath $publishDirectory -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
+    Copy-WindowsFileIfChanged (Join-Path $root "wsl-dev.ps1") $launcherPath
 }
 
 $configContent = Merge-BashPath (Get-Text $configPath) $adapterPath
