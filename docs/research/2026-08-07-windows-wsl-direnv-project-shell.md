@@ -373,6 +373,34 @@ retain an independent allow decision. Allowing a project in native direnv also
 authorizes its `.envrc` to execute in WSL during metadata evaluation; filtering
 the returned environment does not remove that code-execution boundary.
 
+### Experimental user-scoped deployment
+
+The prototype was installed for one Windows user under `LOCALAPPDATA`, without
+adding a directory to `PATH`. Native direnv 2.37.1 used the installed adapter as
+its configured `bash_path`; explicit user-scoped XDG directories resolved the
+Windows config-dir limitation. The normal PowerShell location hook loaded in a
+new PowerShell 7 process.
+
+The Windows-side global `direnvrc` is evaluated by WSL Bash and sources the
+actual Ubuntu user's global `direnvrc`. That file retains its existing
+nix-direnv source and adds a conditional metadata proxy. The adapter sets
+`DIRENV_WSL_DEV_METADATA_ONLY=1` only in its evaluator process, so direct WSL
+runtime evaluation does not replace nix-direnv's real `use_flake`.
+
+An allowed Windows temporary fixture whose path contained spaces kept `.envrc`
+exactly `use flake`. Hook and explicit exports preserved empty and Unicode
+metadata, returned only `WSL_DEV_*` plus native `DIRENV_*`, repeated cleanly,
+and retained native `.envrc` reload ownership without forwarding proxy flake
+watches. Neither the export nor the parent Windows `PATH` contained
+`/nix/store`. The installed launcher then ran the existing npm, Node, uv,
+Python, and Bash descendant fixture entirely in WSL while resolving runtime
+Node.js from the Nix store.
+
+The deployment script is idempotent, supports dry-run and rollback, merges
+managed blocks, and records initial state plus timestamped backups. This closes
+the local installation gap only; it does not resolve the production-readiness
+limitations above.
+
 ## Options
 
 ### WSL interactive project shell

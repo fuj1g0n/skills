@@ -1,6 +1,8 @@
-use_flake() {
-  export WSL_DEV_ENABLED=1
-  export WSL_DEV_DISTRO="${WSL_DEV_DISTRO:?}"
-  export WSL_DEV_PROJECT="$PWD"
-  export WSL_DEV_EMPTY=""
-}
+if [[ ${DIRENV_WSL_DEV_METADATA_ONLY:-} == 1 ]]; then
+  use_flake() {
+    export WSL_DEV_ENABLED=1
+    export WSL_DEV_DISTRO="${WSL_DEV_DISTRO:?}"
+    export WSL_DEV_PROJECT="$PWD"
+    export WSL_DEV_EMPTY=""
+  }
+fi

@@ -58,6 +58,7 @@ script = Regex.Replace(
 
 var shellInput = $"""
     export DIRENV_CONFIG={BashQuote(wslConfigDirectory)}
+    export DIRENV_WSL_DEV_METADATA_ONLY=1
     export WSL_DEV_DISTRO={BashQuote(distribution)}
     {script}
     """.Replace("\r\n", "\n", StringComparison.Ordinal);

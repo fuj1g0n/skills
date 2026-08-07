@@ -175,6 +175,17 @@ The repository-local `poc/wsl-dev` validates the core execution model:
 * Evaluator-side `watch_file flake.nix` state did not cross either allowlist.
   Native direnv still blocked a changed `.envrc`; WSL nix-direnv remains the
   owner of real flake watches and runtime cache invalidation.
+* An experimental user-scoped deployment installed the self-contained adapter
+  and launcher outside the working tree, configured native direnv through its
+  `bash_path`, and loaded its normal PowerShell location hook without changing
+  the Windows `PATH`.
+* The installed WSL global proxy is conditional on an adapter-only internal
+  flag. Normal `wsl-dev` runtime evaluation therefore continues to use the
+  pre-existing nix-direnv definition instead of the metadata proxy.
+* The deployment preserved the existing PowerShell profile and WSL `direnvrc`
+  with timestamped backups and recorded exact rollback state. It remains an
+  experimental implementation detail and does not change this ADR's proposed
+  status.
 * No installed embedded or alternative Bash candidate was suitable. Directly
   setting `bash_path = "wsl.exe"` failed with exit status `0xffffffff`.
 
