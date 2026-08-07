@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("Install", "Rollback")]
+    [ValidateSet("Install", "Rollback", "Verify")]
     [string]$Action = "Install",
     [string]$Distribution = "Ubuntu-24.04",
     [switch]$DryRun
@@ -25,6 +25,7 @@ $profileStart = "# >>> wsl-dev experimental direnv >>>"
 $profileEnd = "# <<< wsl-dev experimental direnv <<<"
 $proxyStart = "# >>> wsl-dev experimental metadata proxy >>>"
 $proxyEnd = "# <<< wsl-dev experimental metadata proxy <<<"
+$environmentNames = @("DIRENV_CONFIG", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "WSL_DEV_DISTRO")
 
 function Write-Plan([string]$Message) {
     Write-Output $(if ($DryRun) { "DRY-RUN: $Message" } else { $Message })
@@ -186,7 +187,7 @@ function Set-WslText([string]$Path, [string]$Content) {
 
 function Get-OriginalState([string]$ProfilePath, [string]$WslDirenvrcPath) {
     $environment = [ordered]@{}
-    foreach ($name in @("DIRENV_CONFIG", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "WSL_DEV_DISTRO")) {
+    foreach ($name in $environmentNames) {
         $environment[$name] = [Environment]::GetEnvironmentVariable($name, "User")
     }
     return [ordered]@{
@@ -207,6 +208,102 @@ function Restore-WindowsFile($State) {
     else {
         Remove-Item -LiteralPath $State.path -Force -ErrorAction SilentlyContinue
     }
+}
+
+function Send-EnvironmentChange {
+    if (-not ("WslDev.NativeMethods" -as [type])) {
+        Add-Type -TypeDefinition @'
+namespace WslDev {
+    using System;
+    using System.Runtime.InteropServices;
+
+    public static class NativeMethods {
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr SendMessageTimeout(
+            IntPtr hWnd, uint message, UIntPtr wParam, string lParam,
+            uint flags, uint timeout, out UIntPtr result);
+    }
+}
+'@
+    }
+    $result = [UIntPtr]::Zero
+    $null = [WslDev.NativeMethods]::SendMessageTimeout(
+        [IntPtr]0xffff, 0x001a, [UIntPtr]::Zero, "Environment", 0x0002, 5000, [ref]$result)
+}
+
+function Get-CurrentSessionActivation {
+    return ($environmentNames | ForEach-Object {
+        "`$env:$_ = [Environment]::GetEnvironmentVariable('$_', 'User')"
+    }) -join "; "
+}
+
+function Invoke-DirenvConfigProbe(
+    [string]$ProbeName,
+    [string]$DirenvPath,
+    [switch]$LoadProfile,
+    [switch]$OmitDirenvConfig
+) {
+    if (-not (Test-Path -LiteralPath $installRoot)) {
+        throw "The deployment root does not exist: $installRoot"
+    }
+    $process = [Diagnostics.ProcessStartInfo]::new()
+    $process.FileName = (Get-Process -Id $PID).Path
+    $process.WorkingDirectory = $installRoot
+    $process.UseShellExecute = $false
+    $process.RedirectStandardOutput = $true
+    $process.RedirectStandardError = $true
+    if (-not $LoadProfile) {
+        $process.ArgumentList.Add("-NoProfile")
+    }
+    $process.ArgumentList.Add("-NonInteractive")
+    $process.ArgumentList.Add("-Command")
+    $process.ArgumentList.Add(@'
+$ErrorActionPreference = "Stop"
+$resolved = (Get-Command direnv.exe -ErrorAction Stop).Source
+$expectedExecutable = $env:WSL_DEV_CONFIG_PROBE_DIRENV
+if ([IO.Path]::GetFullPath($resolved) -cne [IO.Path]::GetFullPath($expectedExecutable)) {
+    throw "Unexpected direnv executable: $resolved"
+}
+$output = (& $resolved status 2>&1 | Out-String)
+if ($output -match "couldn't find a configuration directory") {
+    throw $output.Trim()
+}
+$match = [regex]::Match($output, '(?m)^DIRENV_CONFIG\s+(.+?)\r?$')
+if (-not $match.Success) {
+    throw "direnv status did not report DIRENV_CONFIG: $output"
+}
+$actual = [IO.Path]::GetFullPath($match.Groups[1].Value.Trim())
+$expected = [IO.Path]::GetFullPath($env:WSL_DEV_CONFIG_PROBE_EXPECTED)
+if ($actual -cne $expected) {
+    throw "direnv resolved config '$actual', expected '$expected'."
+}
+Write-Output "direnv=$resolved"
+Write-Output "config=$actual"
+'@)
+    foreach ($environmentName in $environmentNames) {
+        $null = $process.Environment.Remove($environmentName)
+    }
+    if (-not $LoadProfile) {
+        foreach ($environmentName in $environmentNames) {
+            $value = [Environment]::GetEnvironmentVariable($environmentName, "User")
+            if ($null -ne $value) {
+                $process.Environment[$environmentName] = $value
+            }
+        }
+    }
+    if ($OmitDirenvConfig) {
+        $null = $process.Environment.Remove("DIRENV_CONFIG")
+    }
+    $process.Environment["WSL_DEV_CONFIG_PROBE_DIRENV"] = $DirenvPath
+    $process.Environment["WSL_DEV_CONFIG_PROBE_EXPECTED"] = $configDirectory
+    $child = [Diagnostics.Process]::Start($process)
+    $stdout = $child.StandardOutput.ReadToEnd()
+    $stderr = $child.StandardError.ReadToEnd()
+    $child.WaitForExit()
+    if ($child.ExitCode -ne 0) {
+        throw "$ProbeName failed with exit code $($child.ExitCode): $stderr$stdout"
+    }
+    Write-Output "$ProbeName passed: $($stdout.Trim() -replace "`r?`n", "; ")"
 }
 
 if ($Action -eq "Rollback") {
@@ -230,15 +327,25 @@ if ($Action -eq "Rollback") {
     }
     foreach ($property in $state.environment.PSObject.Properties) {
         [Environment]::SetEnvironmentVariable($property.Name, $property.Value, "User")
+        [Environment]::SetEnvironmentVariable($property.Name, $property.Value, "Process")
     }
+    Send-EnvironmentChange
     Remove-Item -LiteralPath $adapterDirectory, $binDirectory -Recurse -Force -ErrorAction SilentlyContinue
     Write-Output "Rollback complete. Backups and deployment state remain under $installRoot."
+    Write-Output "Activate restored values in this PowerShell: $(Get-CurrentSessionActivation)"
     return
 }
 
 $direnv = Get-Command direnv.exe -ErrorAction Stop
 if ((& $direnv.Source version) -ne "2.37.1") {
     throw "This experimental deployment requires native direnv 2.37.1."
+}
+if ($Action -eq "Verify") {
+    Invoke-DirenvConfigProbe "Persisted user environment no-profile probe" $direnv.Source
+    Invoke-DirenvConfigProbe "Sanitized DIRENV_CONFIG XDG fallback probe" $direnv.Source -OmitDirenvConfig
+    Invoke-DirenvConfigProbe "Profile-loaded probe" $direnv.Source -LoadProfile
+    Write-Output "Deployment environment verification passed."
+    return
 }
 $null = Get-Command dotnet.exe -ErrorAction Stop
 $null = Get-Command wsl.exe -ErrorAction Stop
@@ -305,7 +412,7 @@ Set-WindowsText $configDirenvrcPath $configDirenvrcContent
 
 $profileBody = @"
 `$env:DIRENV_CONFIG = Join-Path `$env:LOCALAPPDATA "wsl-dev\direnv"
-`$env:XDG_CONFIG_HOME = Join-Path `$env:LOCALAPPDATA "wsl-dev\xdg\config"
+`$env:XDG_CONFIG_HOME = Join-Path `$env:LOCALAPPDATA "wsl-dev"
 `$env:XDG_CACHE_HOME = Join-Path `$env:LOCALAPPDATA "wsl-dev\xdg\cache"
 `$env:XDG_DATA_HOME = Join-Path `$env:LOCALAPPDATA "wsl-dev\xdg\data"
 `$env:WSL_DEV_DISTRO = "$Distribution"
@@ -332,7 +439,7 @@ Set-WslText $wslDirenvrcPath $wslContent
 
 $userEnvironment = [ordered]@{
     DIRENV_CONFIG = $configDirectory
-    XDG_CONFIG_HOME = Join-Path $installRoot "xdg\config"
+    XDG_CONFIG_HOME = $installRoot
     XDG_CACHE_HOME = Join-Path $installRoot "xdg\cache"
     XDG_DATA_HOME = Join-Path $installRoot "xdg\data"
     WSL_DEV_DISTRO = $Distribution
@@ -344,10 +451,17 @@ foreach ($entry in $userEnvironment.GetEnumerator()) {
         [Environment]::SetEnvironmentVariable($entry.Key, $entry.Value, "Process")
     }
 }
+if (-not $DryRun) {
+    Send-EnvironmentChange
+    Invoke-DirenvConfigProbe "Persisted user environment no-profile probe" $direnv.Source
+    Invoke-DirenvConfigProbe "Sanitized DIRENV_CONFIG XDG fallback probe" $direnv.Source -OmitDirenvConfig
+    Invoke-DirenvConfigProbe "Profile-loaded probe" $direnv.Source -LoadProfile
+}
 
 Write-Output "Experimental wsl-dev deployment complete."
 Write-Output "Adapter: $adapterPath"
 Write-Output "Launcher: $launcherPath"
 Write-Output "Native direnv config: $configDirectory"
 Write-Output "WSL direnvrc: ${Distribution}:$wslDirenvrcPath"
+Write-Output "Activate this already-open PowerShell: $(Get-CurrentSessionActivation)"
 Write-Output "Rollback: & '$PSCommandPath' -Action Rollback"
