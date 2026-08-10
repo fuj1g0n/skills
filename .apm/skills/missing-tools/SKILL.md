@@ -1,84 +1,57 @@
 ---
 name: missing-tools
-description: Resolves missing CLI tools. Use when a command is unavailable, a shell reports command not found, or a tool must be run without installing it globally.
+description: Resolves a missing CLI for one-shot use without persistent mutation. Use on command-not-found errors; route recurring or user-wide needs to the existing authoritative owner.
 ---
 
 # Missing Tools
 
-Use this workflow when a command is unavailable in the current shell.
+Use this workflow before searching arbitrary paths or installing anything.
+This skill owns one-shot recovery and scope triage, not persistent tool state.
 
-## Step 1: Decide the scope
+## Workflow
 
-Before running anything, classify why the tool is needed:
+1. Re-check the current shell. Activation may have reset between commands.
+2. Inspect authoritative project markers through
+   `project-toolchain-selection` without changing them.
+3. Classify the need:
+   - **one-shot**: continue here;
+   - **recurring project tool**: hand off to the existing
+     `nix-project-toolchain` or `mise-project-toolchain` owner;
+   - **user-wide tool**: require an explicit global request, then hand off to
+     `nix-user-tools` or `mise-user-tools`.
+4. Ask when duration or scope is unclear. Do not hide a recurring dependency
+   behind an ephemeral command.
 
-| Scope | Signal | Action |
-|---|---|---|
-| **One-shot** | Needed once or a few times in this session only | Handle here — see below |
-| **Project dev tool** | Part of the project's toolchain, needed repeatedly (build, lint, test, codegen) | Delegate to the `nix-for-dev` skill: add it to the flake devShell, then run via `direnv exec .` |
-| **User-wide tool** | Used across many projects, independent of any one repo | Delegate to the `nix-manager` skill: install via `nix profile` |
+## One-shot execution
 
-Ask the user when the scope is unclear. Do not quietly resolve a recurring
-project dependency with one-shot runs — persist it via the right skill.
-
-## Step 2: One-shot execution
-
-### 2.0 Check the project environment first
-
-The tool may already exist in the project's dev shell:
+First reuse the current authority:
 
 ```sh
-direnv exec . <command>
+direnv exec . <command>        # activated project environment
+nix develop --command <command>
+mise exec -- <command>
 ```
 
-### 2.1 Ecosystem-native runners
+If the tool is not already provisioned, use an exact ephemeral version from a
+trusted source compatible with the current authority. Nix projects may use an
+exact pinned flake/package reference; mise projects may use exact
+`mise exec <tool>@<version> -- ...` resolution under their backend policy.
+Do not add or edit project manifests for a one-shot request.
 
-When the tool belongs to a language ecosystem, prefer that ecosystem's
-ephemeral runner. The runner itself (uv, node, go, ...) is a project-wide
-concern: if the project's devShell provides it, run it via `direnv exec .`;
-otherwise obtain the runner itself through Nix — never install it globally.
+For npm tools, never download through floating `npx`. Use an already committed
+exact dependency and lockfile after `npm ci`; if none exists, stop and ask
+whether the user wants a persistent project dependency through the normal
+Node workflow and `mise-project-toolchain` supply-chain policy.
 
-| Ecosystem | In a devShell that has the runner | Runner via Nix |
-|---|---|---|
-| Python | `direnv exec . uvx ruff check .` | `nix shell nixpkgs#uv --command uvx ruff check .` |
-| Node.js | `direnv exec . npx -y prettier --check .` | `nix shell nixpkgs#nodejs --command npx -y prettier --check .` |
-| Go | `direnv exec . go run golang.org/x/tools/cmd/goimports@latest -l .` | `nix shell nixpkgs#go --command go run <module>@<version>` |
-| Rust | none (`cargo install` is persistent) | fall through to nixpkgs below |
+## Prohibitions
 
-Match the project's package manager for Node (`pnpm dlx` via `nixpkgs#pnpm`,
-`bunx` via `nixpkgs#bun`). Inside a uv-managed project, use `uv run
-<command>` instead of `uvx` so the project's own environment is used.
+- No global install or user configuration mutation.
+- No project manifest, lockfile, task recipe, or package-output mutation.
+- No toolchain migration or Nix/mise normalization.
+- No floating `latest`, unpinned downloads, registry bypass, or verification
+  downgrade.
+- No `/nix/store` paths in Win32 `PATH`; an existing Nix project on Windows
+  continues inside WSL, a Dev Container, or wslc.
 
-### 2.2 Generic fallback: nixpkgs
-
-For tools with no ecosystem runner (or Rust CLIs):
-
-1. [comma](https://github.com/nix-community/comma), if `,` is available —
-   automatically finds the nixpkgs package containing the command:
-
-   ```sh
-   , <command>
-   ```
-
-2. `nix run` when you know the package:
-
-   ```sh
-   nix run nixpkgs#<package> -- <args>
-   ```
-
-3. `nix shell` as the last resort (multiple tools, or command != package):
-
-   ```sh
-   nix shell nixpkgs#<package> --command <command>
-   ```
-
-Whenever these may fetch from GitHub, also use the `nix-github-rate-limit`
-skill. Package name sometimes differs from command name; search with
-`nix search nixpkgs <command>` or https://search.nixos.org.
-
-## Notes
-
-- Never install missing tools globally from this skill. Do not use commands
-  such as `apt-get install`, `npm install -g`, `pnpm add -g`,
-  `yarn global add`, `bun add -g`, `uv tool install`, `cargo install`,
-  `brew install`, or other global installers — persistent installs go
-  through `nix-for-dev` (project) or `nix-manager` (user-wide).
+Use `nix-github-rate-limit` when an approved Nix one-shot may fetch from
+GitHub.

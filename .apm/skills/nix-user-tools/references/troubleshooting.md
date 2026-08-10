@@ -13,7 +13,7 @@ Solutions:
 
 - Run `nix-collect-garbage -d` to remove old generations
 - Run `nix store optimise` to deduplicate files
-- Clean stale `.direnv` GC roots first (see `nix-gc-direnv`)
+- Clean stale `.direnv` GC roots first (see `nix-direnv-gc-roots`)
 - Check network connectivity (binary cache downloads); on this WSL2/GSA
   network a hang is usually DNS, not Nix
 
@@ -23,7 +23,8 @@ Error: `error: attribute 'package-name' missing`
 
 1. Search for the package: `nix search nixpkgs package-name`
 2. Check if the package was renamed (e.g., `du-dust` → `dust`)
-3. Try alternative package names or https://search.nixos.org
+3. Try alternative package names in the
+  [Nix package search](https://search.nixos.org/)
 
 ## GitHub Rate Limits
 
