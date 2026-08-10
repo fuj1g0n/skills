@@ -2,7 +2,14 @@
 
 Date: 2026-07-29
 Author: @fuj1g0n (with GitHub Copilot CLI)
-Status: immutable snapshot
+Status: immutable historical snapshot
+
+Outcome (2026-08-10): the wslc and command-rerouting designs were validated as
+proofs of concept but were not adopted. See the rejected
+[WSL direnv project shell ADR](../adr/0019-wsl-direnv-project-shell-for-windows-hosted-projects.md)
+and the deterministic toolchain policy in
+[Select one authoritative project development toolchain](../adr/0021-select-one-project-development-toolchain.md),
+which supersedes these experimental designs.
 
 ## Question
 
@@ -211,9 +218,7 @@ Measured:
 * `/nix` volume reuse: `container rm` + re-create with the same
   volume, then `postCreateCommand.sh` took the ADR-0013 bootstrap
   manifest fast path and finished in ~58 s wall.
-* Hook PoC script:
-  [assets/2026-07-29-wslc-reroute-hook.ps1](assets/2026-07-29-wslc-reroute-hook.ps1).
-  Fed stdin JSON payloads, it rewrote
+* The removed hook PoC script accepted stdin JSON payloads and rewrote
   `just --version` into the `wslc exec ...` form via
   `{"modifiedArgs":{"command":...}}`; the rewritten command executed
   successfully; malformed payload exits non-zero (fail-closed);
@@ -245,15 +250,17 @@ Pitfalls found and mitigations:
 
 ## Sources
 
-* https://github.com/NixOS/nix/issues/5551, /pull/6530, /pull/13225,
-  /issues/10627
-* https://determinate.systems/blog/changelog-determinate-nix-352/
+* <https://github.com/NixOS/nix/issues/5551>,
+  <https://github.com/NixOS/nix/pull/6530>,
+  <https://github.com/NixOS/nix/pull/13225>, and
+  <https://github.com/NixOS/nix/issues/10627>
+* <https://determinate.systems/blog/changelog-determinate-nix-352/>
   (and 3.6.7, 3.8.0 changelogs)
-* https://discourse.nixos.org/t/determinate-nix-3-5-introducing-lazy-trees/64350
-* https://learn.microsoft.com/en-us/windows/wsl/wsl-container
-* https://devblogs.microsoft.com/commandline/wsl-container-is-now-available-for-public-preview/
-* https://www.boxofcables.dev/wsl2-per-device-swiotlb-pools-for-virtiofs-and-virtioproxy/
-* https://softantenna.com/blog/wsl2-virtiofs-speedup/
+* <https://discourse.nixos.org/t/determinate-nix-3-5-introducing-lazy-trees/64350>
+* <https://learn.microsoft.com/en-us/windows/wsl/wsl-container>
+* <https://devblogs.microsoft.com/commandline/wsl-container-is-now-available-for-public-preview/>
+* <https://www.boxofcables.dev/wsl2-per-device-swiotlb-pools-for-virtiofs-and-virtioproxy/>
+* <https://softantenna.com/blog/wsl2-virtiofs-speedup/>
 * GitHub Docs: Copilot CLI configuration directory reference; hooks
   reference (preToolUse `modifiedArgs`, fail-closed semantics)
 * Local benchmarks: this document, Part 2 (2026-07-29/30)

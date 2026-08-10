@@ -6,7 +6,18 @@ type: Research
 
 Date: 2026-08-07
 Author: @fuj1g0n (with GitHub Copilot)
-Status: working note
+Status: concluded; architecture rejected
+
+## Outcome
+
+The native-direnv adapter and `wsl-dev` launcher were validated as a proof of
+concept but are not adopted or supported. Windows-capable project tool
+management follows the single-authority mise+Aqua/native-artifact policy in
+[Select one authoritative project development toolchain ADR](../adr/0021-select-one-project-development-toolchain.md).
+Nix remains within guaranteed Linux-only or established Nix projects and is
+entered through WSL or container boundaries without exporting Linux tool paths
+to Win32. See the rejected
+[WSL direnv project shell ADR](../adr/0019-wsl-direnv-project-shell-for-windows-hosted-projects.md).
 
 ## Question
 
@@ -40,10 +51,10 @@ this binary. `powershell`, `cmd`, and `nu` returned `unknown target shell`.
 
 ## 2026-08-07 installed-direnv measurements
 
-### Method
+### Installed-direnv method
 
-`poc/wsl-dev/measure-architectures.ps1` used only copies under a uniquely named
-Windows temporary directory containing spaces. The project `.envrc` remained
+The now-removed PoC measurement harness used only copies under a uniquely
+named Windows temporary directory containing spaces. The project `.envrc` remained
 the ordinary one-line `use flake` contract. A temporary global `use_flake`
 proxy watched `flake.nix` and emitted metadata containing an empty value,
 spaces, a newline, shell metacharacters, and `日本語-✓`.
@@ -128,39 +139,32 @@ depends on entering through D's `wsl-dev shell/exec` runtime boundary.
 
 ### Reproduction
 
-```powershell
-$direnv = (Get-Command direnv.exe).Source
-direnv version
-direnv status
-./poc/wsl-dev/measure-architectures.ps1 -DirenvPath $direnv -Samples 7
-./poc/wsl-dev/test-wsl-bash-adapter.ps1
-./poc/wsl-dev/test-poc.ps1
-```
-
-The scripts use isolated temporary fixtures and do not read or modify the
-repository root `.envrc`.
+The removed scripts used isolated temporary fixtures and did not read or
+modify the repository root `.envrc`. They remain available in Git history for
+audit, but there is no supported reproduction or deployment workflow.
 
 ### Pros and cons under the fixed constraints
 
 | Option | Pros | Cons | Result |
 |---|---|---|---|
 | A. Git Bash/MSYS filter | Fastest measured warm no-change median; directly accepts `-c`; can reconstruct Win32 state and allowlist metadata | Cold median 3.70 s with wide variance; MSYS changes paths and environment representation before filtering; adds a Bash unlike runtime WSL; does not contain descendants; proxy watches do not cross | Executable, but not recommended |
-| B. WSL Bash adapter | Meets native-direnv interface; preserves ordinary `use flake`; evaluates with runtime Bash family; emits only metadata; rejects Nix paths; translates spaced paths correctly | Cold median 3.23 s and warm median 0.37 s; version-sensitive generated-script translation; extra WSL process; separate allow state; proxy watches do not cross; adapter alone does not contain descendants | Recommended Windows control plane |
+| B. WSL Bash adapter | Meets native-direnv interface; preserves ordinary `use flake`; evaluates with runtime Bash family; emits only metadata; rejects Nix paths; translates spaced paths correctly | Cold median 3.23 s and warm median 0.37 s; version-sensitive generated-script translation; extra WSL process; separate allow state; proxy watches do not cross; adapter alone does not contain descendants | Validated PoC; not adopted |
 | C. Embedded/alternative Bash | Could avoid WSL startup if a fully compatible implementation existed | No installed suitable candidate; direct WSL launcher fails; Bash compatibility and security surface is large; no execution evidence | Blocked/rejected |
-| D. direct `wsl-dev shell/exec` | Simplest runtime; real nix-direnv watches/cache; no environment import; measured complete WSL descendant tree; preserves Linux artifacts and semantics | Violates native-direnv-as-interface if used alone; first median 14.49 s and warm command median 4.73 s in this fixture; NTFS/virtiofs overhead remains | Required runtime, fallback control plane |
+| D. direct `wsl-dev shell/exec` | Simplest runtime; real nix-direnv watches/cache; no environment import; measured complete WSL descendant tree; preserves Linux artifacts and semantics | Violates native-direnv-as-interface if used alone; first median 14.49 s and warm command median 4.73 s in this fixture; NTFS/virtiofs overhead remains | Validated PoC; not adopted |
 
-The evidence supports B plus D: native Windows direnv remains a metadata-only
-interface through B, while every development command enters D. The project
-keeps ordinary `use flake`, Win32 receives neither `/nix/store` nor Linux
-executable paths, and the complete development process tree stays in WSL.
+The evidence showed that B plus D could preserve the boundary: native Windows
+direnv remained metadata-only while development commands entered WSL. The
+combination was nevertheless rejected because it adds adapter and process
+lifecycle authority without providing transparent access to complete devShell
+semantics from native Windows tools.
 
 ## 2026-08-08 all-command forwarding measurements
 
-### Method
+### All-command forwarding method
 
-`poc/wsl-dev/test-all-command-forwarding.ps1` copied the runtime fixture to a
-unique Windows temporary path containing spaces and verified that its `.envrc`
-was exactly `use flake`. It enumerated executable files from the activated WSL
+The now-removed all-command harness copied the runtime fixture to a unique
+Windows temporary path containing spaces and verified that its `.envrc` was
+exactly `use flake`. It enumerated executable files from the activated WSL
 devShell `PATH`, excluding `/mnt` paths, and generated project-local PowerShell
 shims in another temporary directory. No shim or interception was installed
 globally. Three warm wall-clock samples were collected on the same non-isolated
@@ -208,10 +212,10 @@ PowerShell shims or command-not-found handlers.
 | A. Generated native Windows shim directory | Ordinary PowerShell names; explicit project scope; can choose collision precedence; stale entries can be synchronized | Must enumerate executable files; 1,214 files in this fixture; `.ps1` form loses pipeline stdin and is not a Git Bash ordinary command; no aliases/functions/builtins/completion; regeneration and writable-shim security surface | Optional PowerShell convenience prototype, not complete semantics |
 | B. Command-not-found interception | No per-command files; forwards newly added missing executables; existing Windows commands remain stable | Shell-specific installation; cannot select WSL for collisions or builtins; typo forwarding expands code-execution surface; Git Bash applies MSYS conversion | Optional, gated convenience for missing names only |
 | C. Broker/daemon plus lightweight shims | Could amortize WSL and direnv startup and centralize policy | Still needs native command files or interception; adds authentication, lifecycle, stale state, multiplexed I/O, cancellation, and compromise blast radius; does not recover shell semantics | Not justified by 0.81-0.89 s prototype latency |
-| D. WSL active interactive shell | Normal command lookup; aliases, functions, builtins, completion, TTY, signals, job control, and all descendants stay Linux-native | User crosses into WSL; Windows-native editor integrations need WSL execution or attachment | Maximum compatibility and reliability; recommended |
+| D. WSL active interactive shell | Normal command lookup; aliases, functions, builtins, completion, TTY, signals, job control, and all descendants stay Linux-native | User crosses into WSL; Windows-native editor integrations need WSL execution or attachment | Validated Linux boundary; not adopted as a native adapter |
 | E. Git Bash evaluator/functions/shims | Familiar Windows-hosted Bash interface; functions can avoid thousands of files | MSYS mutates Linux-looking paths; generated command set is shell-local and stale; collision policy and Bash dialect differ from runtime WSL | Inferior to entering WSL |
 | F. Native Windows package alternatives | Native process, path, debugger, and terminal behavior | Nix does not support native Windows; no `nix.exe` was present; package versions and artifacts diverge from the Nix devShell | Separate toolchain, not devShell transparency |
-| G. PTY-aware proxy or shell replacement | Could improve one-command terminal behavior and signal forwarding | Reimplements ConPTY/PTY, resize, signals, job control, shell state, quoting, and completion; still needs resolution interception; effectively rebuilds a remote shell | Use `wsl-dev shell`, Windows Terminal WSL profile, or VS Code WSL instead |
+| G. PTY-aware proxy or shell replacement | Could improve one-command terminal behavior and signal forwarding | Reimplements ConPTY/PTY, resize, signals, job control, shell state, quoting, and completion; still needs resolution interception; effectively rebuilds a remote shell | Rejected |
 
 Unchanged native command resolution cannot satisfy all-command semantics.
 PowerShell and Git Bash both require a resolvable native command artifact,
@@ -220,13 +224,11 @@ file under `/nix/store` cannot be placed on Win32 `PATH` and executed. Moreover,
 enumerating executable files still excludes aliases, functions, builtins,
 completion, dynamic shell state, and commands added after generation.
 
-The maximum-compatibility recommendation is D: make WSL the active interactive
-shell through `wsl-dev shell`, a Windows Terminal WSL profile, or VS Code WSL,
-with normal WSL direnv/nix-direnv. The maximum Windows-shell convenience option
-is a project-scoped, explicitly enabled B handler for missing names, with A only
-when deliberate collision shadowing is more important than file count and
-regeneration. Automation should continue to use explicit `wsl-dev exec`.
-Neither convenience layer should be globally enabled by default.
+The PoC found that an active WSL shell was the only complete Linux shell
+boundary. Per-command handlers and generated shims remained incomplete. The
+project does not adopt any of these layers as a Windows tool-management
+architecture; established Nix projects may still use their selected WSL or
+container boundary under the deterministic toolchain policy.
 
 ## Findings
 
@@ -412,7 +414,7 @@ store and global Linux caches should remain on WSL ext4.
 
 ### PoC result
 
-The repository-local [`poc/wsl-dev`](../../poc/wsl-dev/README.md) implements:
+The removed repository-local PoC implemented:
 
 * `shell`: translated Windows cwd, interactive WSL Bash, normal direnv hook.
 * `exec`: non-interactive commands through `direnv exec`.
@@ -449,61 +451,41 @@ the returned environment does not remove that code-execution boundary.
 
 ### Experimental user-scoped deployment
 
-The prototype was installed for one Windows user under `LOCALAPPDATA`, without
-adding a directory to `PATH`. Native direnv 2.37.1 used the installed adapter as
-its configured `bash_path`; explicit user-scoped XDG directories resolved the
-Windows config-dir limitation. The managed PowerShell profile block loads the
-normal location hook and defines a `wsl-dev` function that invokes the installed
-launcher with argument forwarding. A profile-loaded process resolves the
-function before applications; a `-NoProfile` process intentionally does not,
-but can execute the installed script by absolute path.
+The prototype was installed for one Windows user under
+`%LOCALAPPDATA%\wsl-dev`. It may remain as external machine state after the
+repository implementation is removed. This rejection does not uninstall or
+support that deployment.
 
-The Windows-side global `direnvrc` is evaluated by WSL Bash and sources the
-actual Ubuntu user's global `direnvrc`. That file retains its existing
-nix-direnv source and adds a conditional metadata proxy. The adapter sets
-`DIRENV_WSL_DEV_METADATA_ONLY=1` only in its evaluator process, so direct WSL
-runtime evaluation does not replace nix-direnv's real `use_flake`.
+The archival deployment script can restore its recorded PowerShell profile,
+native direnv configuration, WSL `direnvrc`, user environment values, adapter,
+and launcher. From a clone of this repository, preview and then perform the
+rollback from the last PoC commit:
 
-An allowed Windows temporary fixture whose path contained spaces kept `.envrc`
-exactly `use flake`. Hook and explicit exports preserved empty and Unicode
-metadata, returned only `WSL_DEV_*` plus native `DIRENV_*`, repeated cleanly,
-and retained native `.envrc` reload ownership without forwarding proxy flake
-watches. Neither the export nor the parent Windows `PATH` contained
-`/nix/store`. The installed launcher then ran the existing npm, Node, uv,
-Python, and Bash descendant fixture entirely in WSL while resolving runtime
-Node.js from the Nix store.
+```powershell
+$rollbackTree = "$env:TEMP\fuj1g0n-skills-wsl-dev-rollback"
+git worktree add --detach $rollbackTree 97dbfc6909eb459609a256a1c3c9edab2743e801
+& "$rollbackTree\poc\wsl-dev\deploy-user.ps1" -Action Rollback -DryRun
+& "$rollbackTree\poc\wsl-dev\deploy-user.ps1" -Action Rollback
+```
 
-The deployment script is idempotent, supports dry-run and rollback, merges
-managed blocks, and records initial state plus timestamped backups. This closes
-the local installation gap only; it does not resolve the production-readiness
-limitations above.
-
-The observed `direnv allow` success followed by PowerShell's “`nix` is not
-recognized” error is expected, not an evaluator failure. The native hook had
-active `WSL_DEV_ENABLED`, `WSL_DEV_DISTRO`, and `WSL_DEV_PROJECT` metadata while
-the parent Win32 `PATH` remained unchanged and contained no `/nix/store` entry.
-The practical entry points are `wsl-dev shell` and
-`wsl-dev exec nix --version`. A Windows `nix` shim was rejected because it
-would make the control-plane/runtime distinction implicit and provide weaker
-semantics for arbitrary commands and interactive sessions.
+Rollback remains an explicit user operation. It is not performed by repository
+checkout, update, or deployment tooling.
 
 ## Options
 
 ### WSL interactive project shell
 
-Recommended. It reuses the existing WSL store and nix-direnv cache, preserves
-the complete Linux process tree, and requires no container.
+Validated but not adopted as the Windows tool-management architecture. An
+established Nix project may still use an explicit WSL boundary.
 
 ### WSL Bash evaluator adapter
 
-Recommended control plane under the fixed native-direnv requirement. It uses
-WSL's Bash semantics, avoids MSYS mutation, and can fail closed while returning
-only `WSL_DEV_*`. It remains launcher configuration rather than devShell
-activation; the complete runtime still begins at `wsl-dev shell/exec`.
+Validated but not adopted. It uses WSL's Bash semantics and can return only
+allowlisted metadata, but it remains a version-sensitive second control plane.
 
 ### Git Bash filtering bridge
 
-Technically feasible, but not recommended. It directly satisfies `-c`, yet
+Technically feasible, but not adopted. It directly satisfies `-c`, yet
 MSYS changes `Path`/`PATH`, casing, and path values before filtering and adds a
 second Bash distribution that does not own the runtime. Correctness requires
 reconstructing the Win32 environment anyway, eliminating its apparent
@@ -518,17 +500,14 @@ security-sensitive compatibility surface for a deliberately small bridge.
 
 ### Bypass native direnv
 
-Best simplification if the visible-control-plane requirement is relaxed:
-invoke `wsl-dev shell/exec` directly and let only WSL direnv evaluate `.envrc`.
-It is not selected here because native direnv is a fixed interface requirement,
-not because the runtime needs it.
+Not adopted as a native Windows adapter. Established Nix projects instead use
+their selected WSL or container boundary directly.
 
 ### Native Windows direnv environment import
 
 Rejected as the runtime. It exports unusable Linux executable paths and cannot
-represent the process boundary. The selected native hook is metadata-only.
-Host-specific behavior belongs in global direnv configuration, not in the
-project `.envrc`.
+represent the process boundary. Host-specific behavior belongs in global
+direnv configuration, not in the project `.envrc`.
 
 ### wslc container delegation
 
