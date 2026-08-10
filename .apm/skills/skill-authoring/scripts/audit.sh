@@ -35,6 +35,7 @@ fi
 frontmatter_value() {
   local file="$1" key="$2"
   awk -v key="$key" '
+    { sub(/\r$/, "", $0) }
     NR == 1 && $0 == "---" { in_fm = 1; next }
     in_fm && $0 == "---" { exit }
     collecting {
