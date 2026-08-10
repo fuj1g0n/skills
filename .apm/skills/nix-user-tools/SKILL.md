@@ -1,5 +1,5 @@
 ---
-name: nix-manager
+name: nix-user-tools
 description: "Manage user-level Nix packages and configuration using Determinate Nix patterns. Use when installing/updating user CLI tools, troubleshooting Nix issues, or optimizing Nix workflows. Keywords: nix, package, nixpkgs, nix profile, determinate, nix-installer"
 ---
 
@@ -18,7 +18,7 @@ User-level package management following Determinate Systems best practices.
 - **Forbidden**: `apt-get`, `brew`, `nix-env -i`, devbox (removed from this
   system)
 - **Scope rule**: only install user-wide when a tool is used across many
-  projects; project toolchains belong in flake devShells (see `nix-for-dev`),
+  projects; project toolchains belong in flake devShells (see `nix-project-toolchain`),
   and one-shot needs are run ephemerally instead (see `missing-tools`)
 
 ### 2. Package Management Operations

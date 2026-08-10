@@ -24,8 +24,8 @@ Before running anything, classify why the tool is needed:
 | Scope | Signal | Action |
 |---|---|---|
 | **One-shot** | Needed once or a few times in this session only | Handle here — see below |
-| **Project dev tool** | Part of the project's toolchain, needed repeatedly (build, lint, test, codegen) | Delegate to the `nix-for-dev` skill: add it to the flake devShell, then run via `direnv exec .` |
-| **User-wide tool** | Used across many projects, independent of any one repo | Delegate to the `nix-manager` skill: install via `nix profile` |
+| **Project dev tool** | Part of the project's toolchain, needed repeatedly (build, lint, test, codegen) | Delegate to the `nix-project-toolchain` skill: add it to the flake devShell, then run via `direnv exec .` |
+| **User-wide tool** | Used across many projects, independent of any one repo | Delegate to the `nix-user-tools` skill: install via `nix profile` |
 
 Ask the user when the scope is unclear. Do not quietly resolve a recurring
 project dependency with one-shot runs — persist it via the right skill.
@@ -91,4 +91,4 @@ skill. Package name sometimes differs from command name; search with
   such as `apt-get install`, `npm install -g`, `pnpm add -g`,
   `yarn global add`, `bun add -g`, `uv tool install`, `cargo install`,
   `brew install`, or other global installers — persistent installs go
-  through `nix-for-dev` (project) or `nix-manager` (user-wide).
+   through `nix-project-toolchain` (project) or `nix-user-tools` (user-wide).
