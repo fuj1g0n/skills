@@ -1,5 +1,5 @@
 ---
-name: nix-gc-direnv
+name: nix-direnv-gc-roots
 description: Clean up .direnv directories that act as Nix store GC roots, freeing disk space. Use when you want to reclaim Nix store space by removing stale direnv flake caches (e.g., "clean up direnv roots", "free nix store space", "remove direnv caches").
 ---
 

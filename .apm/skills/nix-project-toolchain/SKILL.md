@@ -1,5 +1,5 @@
 ---
-name: nix-for-dev
+name: nix-project-toolchain
 description: Use this when setting up Nix for a development project (devShell + package build) and you care about `nix develop` being fast. Covers the zero-inputs flake.nix + npins + default.nix/shell.nix layout, sub-flakes for non-user-facing Nix, direnv activation, and language-specific recommendations.
 ---
 
@@ -113,7 +113,7 @@ devShells = eachSystem (pkgs:
 
 ## direnv activation
 
-direnv + nix-direnv are installed user-wide (see `nix-manager`). Activate the
+direnv + nix-direnv are installed user-wide (see `nix-user-tools`). Activate the
 devShell per project:
 
 ```sh
@@ -122,10 +122,10 @@ direnv allow
 ```
 
 nix-direnv caches the shell as a GC root under `.direnv/`; clean up stale
-roots with the `nix-gc-direnv` skill.
+roots with the `nix-direnv-gc-roots` skill.
 
 **Scope rule**: the devShell holds the project's recurring toolchain. Tools
-used across many projects go user-wide (see `nix-manager`); tools needed
+used across many projects go user-wide (see `nix-user-tools`); tools needed
 only once are run ephemerally, not added here (see `missing-tools`).
 
 ## Sub-flakes for non-user-facing Nix

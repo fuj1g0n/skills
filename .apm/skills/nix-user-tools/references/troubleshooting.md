@@ -13,7 +13,7 @@ Solutions:
 
 - Run `nix-collect-garbage -d` to remove old generations
 - Run `nix store optimise` to deduplicate files
-- Clean stale `.direnv` GC roots first (see `nix-gc-direnv`)
+- Clean stale `.direnv` GC roots first (see `nix-direnv-gc-roots`)
 - Check network connectivity (binary cache downloads); on this WSL2/GSA
   network a hang is usually DNS, not Nix
 
