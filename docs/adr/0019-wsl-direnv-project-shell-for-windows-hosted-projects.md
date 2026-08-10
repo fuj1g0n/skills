@@ -48,6 +48,12 @@ other native artifacts under the deterministic toolchain policy documented by
 That accepted decision supersedes this experiment and is the durable source of
 project toolchain policy and skill taxonomy.
 
+Authoritative Nix package outputs are a hard Nix constraint. A project cannot
+migrate to mise+Aqua until a separate, explicitly authorized plan removes or
+replaces every such output. Project toolchain skills may provision a task
+runner, but task definitions and workflow orchestration remain normal
+repository work outside those skills.
+
 Nix remains appropriate when development and execution are guaranteed
 Linux-only and for projects that already use Nix. Existing Nix projects opened
 from Windows continue through WSL, a Dev Container, or another selected Linux
