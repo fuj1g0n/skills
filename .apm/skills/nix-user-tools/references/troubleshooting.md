@@ -23,7 +23,8 @@ Error: `error: attribute 'package-name' missing`
 
 1. Search for the package: `nix search nixpkgs package-name`
 2. Check if the package was renamed (e.g., `du-dust` → `dust`)
-3. Try alternative package names or https://search.nixos.org
+3. Try alternative package names in the
+  [Nix package search](https://search.nixos.org/)
 
 ## GitHub Rate Limits
 

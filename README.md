@@ -19,11 +19,23 @@ eventually materialize as skills.
 | [skill-authoring](.apm/skills/skill-authoring/SKILL.md) | Quality rules for writing skills: description discipline, length thresholds, collection audit (`audit.sh`), subagent-based testing | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
 | [adr](.apm/skills/adr/SKILL.md) | Write and maintain Architecture Decision Records in MADR 4.0 format (trigger calibration, supersede workflow, vendored MADR templates) | original (adapted from [cassiobotaro/skills](https://github.com/cassiobotaro/skills), [wshobson/agents](https://github.com/wshobson/agents), [github/awesome-copilot](https://github.com/github/awesome-copilot), all MIT; MADR templates from [adr/madr](https://github.com/adr/madr)) |
 | [documentation](.apm/skills/documentation/SKILL.md) | Project documentation formats: Diátaxis docs/ organization, standard-readme, Keep a Changelog, docs-as-code hygiene, OKF bundle conventions | original (adapted from [RichardLitt/standard-readme](https://github.com/RichardLitt/standard-readme) and [wshobson/agents](https://github.com/wshobson/agents), both MIT; concepts from [diataxis.fr](https://diataxis.fr/) and [keepachangelog.com](https://keepachangelog.com/)) |
-| [nix-user-tools](.apm/skills/nix-user-tools/SKILL.md) | User-level package management with `nix profile` (Determinate Nix patterns) | [wcygan/dotfiles](https://github.com/wcygan/dotfiles) |
-| [nix-project-toolchain](.apm/skills/nix-project-toolchain/SKILL.md) | Repository-level dev environment: zero-inputs flake + npins + devShell + direnv + just | [srid/emanote](https://github.com/srid/emanote) |
-| [missing-tools](.apm/skills/missing-tools/SKILL.md) | Resolve missing CLI tools: triage scope (one-shot / project / user-wide), run one-shots ephemerally (uvx, npx, go run, comma, nix run), delegate persistent installs to nix-project-toolchain / nix-user-tools | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
+| [project-toolchain-selection](.apm/skills/project-toolchain-selection/SKILL.md) | Select one authoritative Nix or mise+Aqua project development toolchain using continuity, package constraints, and participant platforms | original |
+| [missing-tools](.apm/skills/missing-tools/SKILL.md) | Recover one-shot missing commands without persistent mutation; route recurring and explicit global needs to their current owner | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
+| [nix-project-toolchain](.apm/skills/nix-project-toolchain/SKILL.md) | Manage project developer tools, environment, activation, and visibility through Nix devShells | [srid/emanote](https://github.com/srid/emanote) |
+| [nix-wslc-devshell](.apm/skills/nix-wslc-devshell/SKILL.md) | Run an existing Nix project's devShell through its selected Windows-hosted wslc bridge | original |
+| [mise-project-toolchain](.apm/skills/mise-project-toolchain/SKILL.md) | Manage cross-platform project developer tools and environment through mise with Aqua as a backend | original |
+| [nix-user-tools](.apm/skills/nix-user-tools/SKILL.md) | Manage explicit user-wide Linux/WSL tools with `nix profile` | [wcygan/dotfiles](https://github.com/wcygan/dotfiles) |
+| [mise-user-tools](.apm/skills/mise-user-tools/SKILL.md) | Manage explicit user-wide native tool defaults with mise | original |
+| [nix-to-mise-project-toolchain](.apm/skills/nix-to-mise-project-toolchain/SKILL.md) | Perform explicit full-cutover Nix-to-mise migrations; block while Nix package outputs remain | original |
+| [nix-package-outputs](.apm/skills/nix-package-outputs/SKILL.md) | Define and validate Nix packages, apps, checks, derivations, OCI images, and release outputs without owning devShells or tasks | original |
 | [nix-github-rate-limit](.apm/skills/nix-github-rate-limit/SKILL.md) | Safe token injection via `gh auth token` for GitHub-backed Nix fetches | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
 | [nix-direnv-gc-roots](.apm/skills/nix-direnv-gc-roots/SKILL.md) | Clean up `.direnv` GC roots to reclaim Nix store space | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
+
+Project development has exactly one source of truth: Nix or mise+Aqua. Nix
+package outputs require Nix development; package-only flakes cannot accompany
+a mise toolchain. Toolchain skills may pin a task runner but do not define
+recipes. See proposed
+[ADR-0021](docs/adr/0021-select-one-project-development-toolchain.md).
 
 ## Install
 
