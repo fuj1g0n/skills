@@ -1,14 +1,17 @@
-# Language notes
+# Language Toolchain Boundaries
 
-- **Python**: keep Python out of the flake. Provide `uv` in the devShell and
-  manage the interpreter and dependencies with uv (`uv python`, `uv sync`,
-  `uv run`).
-- **Go**: provide `go` (and `gopls`, `golangci-lint`) via the devShell;
-  module deps stay in `go.mod`.
-- **Dev services** (server + watcher + db): use
-  [`process-compose-flake`](https://github.com/Platonic-Systems/process-compose-flake)
-  and [`services-flake`](https://github.com/juspay/services-flake) via their
-  **standalone** entry points (no flake-parts needed). Both have zero inputs
-  themselves, so pinning them via npins keeps the top-level `flake.nix`
-  zero-input too. Reference:
-  [`services-flake/example/without-flake-parts`](https://github.com/juspay/services-flake/tree/main/example/without-flake-parts).
+Language-local managers and locks remain valid under Nix and do not count as
+a second project toolchain.
+
+- **Node.js**: the devShell may pin Node and npm. `package.json` and the
+  committed lockfile own dependencies; use the repository's normal package
+  workflow and `npm ci` policy.
+- **Python**: the devShell may pin `uv`. `pyproject.toml` and `uv.lock` own
+  interpreter constraints and dependencies.
+- **Go**: the devShell may pin Go and developer CLIs. `go.mod` and `go.sum`
+  own module dependencies.
+- **Rust**: follow the repository's established Nix versus rustup ownership;
+  `Cargo.toml` and `Cargo.lock` remain the dependency source of truth.
+
+Do not move language dependencies into Nix merely to centralize configuration.
+Do not create task definitions in Nix; only provision a runner when requested.

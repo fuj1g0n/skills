@@ -1,47 +1,39 @@
-# nix/ file patterns
+# Nix Development File Patterns
 
-The three files under `nix/` that make the zero-inputs layout work.
+Preserve a project's established Nix layout. For a newly confirmed Nix
+toolchain, this repository prefers a zero-inputs flake with npins-pinned
+nixpkgs and a separate development shell.
 
-## nix/nixpkgs.nix — pinned nixpkgs import
-
-```nix
-# Pinned nixpkgs import — managed by npins.
-# To update: npins update nixpkgs
-let
-  sources = import ../npins;
-  nixpkgs = import sources.nixpkgs;
-in
-args: nixpkgs (args // {
-  overlays = (args.overlays or [ ]) ++ [ (import ./overlay.nix) ];
-})
-```
-
-## nix/overlay.nix — leaf packages
-
-Pure callPackage-style packages live in `nix/packages/<name>/default.nix` and
-are auto-injected via the overlay:
+## Development-only flake wrapper
 
 ```nix
-# nix/overlay.nix
-final: _prev: {
-  my-tool = final.callPackage ./packages/my-tool { };
+{
+  outputs = { self, ... }:
+    let
+      systems = [ "x86_64-linux" "aarch64-linux" ];
+      eachSystem = f: builtins.listToAttrs (map
+        (system: {
+          name = system;
+          value = f (import ./nix/nixpkgs.nix { inherit system; });
+        })
+        systems);
+    in
+    {
+      devShells = eachSystem (pkgs: {
+        default = import ./shell.nix { inherit pkgs; };
+      });
+    };
 }
 ```
 
-Packages that need per-invocation arguments (commit hash, build-time env)
-stay in the top-level `default.nix` — overlays are for things that
-legitimately belong on `pkgs`.
+`nix/nixpkgs.nix` imports the committed npins source. `shell.nix` uses
+`pkgs.mkShell` and contains only development tools and environment variables.
+Commit source pins and activation files.
 
-## nix/env.nix — shared env vars
+If the project already has `packages`, `apps`, `checks`, derivations, or
+Nix-built release outputs, do not rewrite them from this reference. Their
+presence constrains development to Nix, while edits belong to
+`nix-package-outputs`.
 
-Define a single `nix/env.nix` returning an attrset; both the build derivation
-and the devShell spread it into their `env`. This prevents drift between
-`nix build` and `nix develop`.
-
-```nix
-# nix/env.nix
-{ pkgs }: {
-  MY_TOOL_DIR = pkgs.my-tool;
-  MY_GH_BIN   = "${pkgs.gh}/bin/gh";
-}
-```
+Do not introduce task definitions into the flake. A task runner may be a
+devShell tool, but recipes stay in the repository's existing task surface.
