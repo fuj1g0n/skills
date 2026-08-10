@@ -103,9 +103,11 @@ Container, or wslc; it does not silently migrate and never exports
 `/nix/store` into Win32 `PATH`. `nix-wslc-devshell` is the narrow owner for an
 already selected wslc execution bridge. It does not take selection,
 development-manifest, migration, task, or package-output ownership. Draft PR
-[#16](https://github.com/fuj1g0n/skills/pull/16) contains a broader experimental
-implementation; this decision does not modify that branch or copy its
-unfixed provisioning scripts.
+[#16](https://github.com/fuj1g0n/skills/pull/16) originally contained a broader
+experimental implementation. The rejected
+[WSL direnv project shell decision](0019-wsl-direnv-project-shell-for-windows-hosted-projects.md)
+records its outcome; the cleanup retains research evidence but removes the
+provisional implementation and does not adopt its provisioning scripts.
 
 ### Consequences
 

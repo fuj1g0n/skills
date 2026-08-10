@@ -105,7 +105,7 @@ The tracked repository state has one `package.json` and no
 | `.apm/skills/missing-tools/SKILL.md` | Recommends `npx -y prettier --check .` for one-shot Node tools | A package version is omitted, so `npx` may download a current release outside a committed lock. Corporate use must not follow this example. |
 | Removed PR #16 PoC fixture | Defined `npm test`, which ran the Node built-in test runner | It declared no dependencies and had no install step; npm was only a script dispatcher there. |
 | Proposed native Windows layer | Would add `markdownlint-cli2@0.22.1` and its lockfile | The top-level package and every transitive lock entry must be admitted before `npm ci` can succeed. |
-| Existing Nix shell | Supplies `markdownlint-cli2` from pinned nixpkgs | It is not an npm bootstrap at execution time; Nix remains an independent fallback subject to the corporation's Nix/cache controls. |
+| Existing Nix shell | Supplies `markdownlint-cli2` from pinned nixpkgs | It is not an npm bootstrap at execution time; Nix remains this existing project's selected authority subject to the corporation's Nix/cache controls. |
 
 The workflow's `ubuntu-latest` runner label and the GHCR `:latest` test tag are
 also floating inputs, but they are not npm package-version age paths. They need
@@ -122,7 +122,7 @@ their own pinning policy and should not be conflated with this npm gate.
 | WinGet | Yes | Manifests/configuration | Installer hashes in community manifests | Installed by default and useful for bootstrap; package versions and upgrades are machine-oriented | Bootstrap layer only |
 | Volta | Yes | `package.json` | Pins Node/package-manager versions; npm lockfile handles dependencies | Excellent Node-only fit; does not manage `just` or `nixfmt` | Too narrow as primary |
 | uv | Yes | `pyproject.toml` and `uv.lock` | Strong Python dependency and interpreter locking | Excellent Python fit; unrelated to this inventory | Not applicable today |
-| Devbox, Flox, Nix | No native Nix execution | Nix-based declarations | Nix closure | Highest Linux parity, but require WSL or a container | Keep as Linux fallback, not Windows primary |
+| Devbox, Flox, Nix | No native Nix execution | Nix-based declarations | Nix closure | Highest Linux parity, but require WSL or a container | Keep for existing Nix or guaranteed Linux-only projects, not as a mise fallback |
 
 ## Candidate analysis
 
@@ -410,8 +410,9 @@ none is policy-free:
   fall back to another source.
 * WSL Nix uses pinned nixpkgs and Nix substituters or source fetches rather than
   npm at execution time. Corporate Nix cache, GitHub, network, and license
-  controls still apply. It remains the explicit fallback for `nixfmt`, not a
-  route around a blocked npm package.
+  controls still apply. It remains authoritative only for a selected Nix
+  project, not a `nixfmt` fallback inside mise or a route around a blocked npm
+  package.
 
 Exact mise and Node versions should be chosen when implementation starts, not
 copied blindly from this time-bound experiment. The Nix and Windows versions
@@ -429,7 +430,12 @@ Do not rely only on interactive shell activation. VS Code extensions and
 coding-agent subprocesses are not guaranteed to inherit a shell hook that was
 loaded after the editor started.
 
-## Migration plan
+## Superseded staged migration plan
+
+The following pre-decision plan is retained as historical context only. It is
+not a current implementation sequence: its staged Nix+mise authority and
+command-scoped WSL Nix fallback conflict with the accepted single-toolchain
+policy in ADR 0021.
 
 1. Add `mise.toml` with `just` and Node only. Pin the minimum mise version.
 2. Add a development-only `package.json` and committed `package-lock.json`
@@ -448,10 +454,12 @@ loaded after the editor started.
 8. After a trial period, decide whether Nix remains the CI authority, becomes
    Linux-only compatibility configuration, or is reduced further.
 
-Rollback is straightforward while the Nix environment remains intact: remove
-the native declaration and lockfiles, clear the project mise install, and
-return task execution to `nix develop` or the established WSL helper. This is
-another reason not to delete or rewrite the Nix files in the first migration.
+Current migration uses `nix-to-mise-project-toolchain` as an explicit full
+cutover. Authoritative Nix package outputs stop migration until a separate
+authorized plan removes or replaces them. A candidate may contain both systems
+only in an isolated branch or worktree; the committed cutover removes the old
+Nix development authority in the same change. Task definitions and language
+dependency locks remain unchanged unless separately authorized.
 
 ## Risks and controls
 
@@ -459,14 +467,14 @@ another reason not to delete or rewrite the Nix files in the first migration.
 |---|---|
 | mise backend behavior differs | Keep ecosystem installation in its native manager; test each backend used |
 | Top-level pin is mistaken for closure reproducibility | Document ownership and commit ecosystem lockfiles |
-| Registry or release asset is unavailable | Cache in CI where appropriate; retain checksums and WSL Nix fallback |
+| Registry or release asset is unavailable | Fail closed; retain the last admitted artifact or lock and do not add a second project toolchain |
 | npm version is younger than policy or not mirrored | Fail closed, report the exact pinned package/version and registry, and retain the last approved lock |
 | Lockfile is mistaken for registry admission | Run `npm ci` from an empty install state against only the corporate registry before merge |
 | Update automation admits a fresh transitive version | Hold direct updates for the minimum age and validate the generated full lock graph through the corporate registry |
 | Corepack or npm becomes an implicit bootstrap | Use the reviewed npm bundled with pinned Node; disable latest lookups and do not install package managers on demand |
 | VS Code or agent does not inherit activation | Use shims configured before editor launch or explicit `mise exec` tasks |
 | Windows and Nix versions drift | Add a parity check that prints and compares intended tool versions |
-| `nixfmt` has no native artifact | Keep an explicit WSL Nix recipe; do not use an unofficial substitute silently |
+| `nixfmt` has no native artifact | Treat it as a selection or migration stop; keep Nix unless replacing or removing the formatter is separately authorized |
 | WinGet catalog drifts or lags | Pin a reviewed bootstrap version or use a checksum-pinned official archive |
 | Multiple managers confuse contributors | Define one owner per layer and expose daily operations through `just` |
 
@@ -521,7 +529,7 @@ the repository's environment contract.
 This recommendation deliberately trades Nix's unified immutable closure for
 native Windows execution, faster ordinary process startup, and compatibility
 with Windows-hosted editors and agents. The trade is acceptable only while
-the repository keeps explicit version, checksum, lockfile, and Linux-fallback
+the repository keeps explicit version, checksum, lockfile, and platform
 boundaries.
 
 ## Sources

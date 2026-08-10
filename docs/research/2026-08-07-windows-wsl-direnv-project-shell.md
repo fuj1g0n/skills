@@ -16,7 +16,10 @@ management follows the single-authority mise+Aqua/native-artifact policy in
 [Select one authoritative project development toolchain ADR](../adr/0021-select-one-project-development-toolchain.md).
 Nix remains within guaranteed Linux-only or established Nix projects and is
 entered through WSL or container boundaries without exporting Linux tool paths
-to Win32. See the rejected
+to Win32. Authoritative Nix package outputs are a hard Nix constraint and block
+mise+Aqua migration until a separate authorized plan removes or replaces them.
+Project toolchain skills do not own task definitions or workflow orchestration.
+See the rejected
 [WSL direnv project shell ADR](../adr/0019-wsl-direnv-project-shell-for-windows-hosted-projects.md).
 
 ## Question
@@ -349,14 +352,14 @@ the runtime. When `wsl-dev` enters Linux, Linux direnv evaluates the same
 `.envrc` again and nix-direnv supplies the real `use_flake`. No WSL-specific
 condition is needed in the repository.
 
-### The complete project shell is the correct boundary
+### The complete project shell was the correct experimental boundary
 
 Microsoft supports launching WSL from PowerShell with the current Windows
 directory translated to `/mnt/<drive>`. On this machine, a warm WSL invocation
 took approximately 166-204 ms. Nix was absent from a non-login `wsl.exe nix`
 invocation but available through the configured login shell.
 
-The proposed boundary is:
+The experiment's proposed boundary was:
 
 ```text
 Windows Terminal / PowerShell / VS Code
@@ -376,10 +379,11 @@ WSL interactive shell + direnv + nix-direnv + Nix devShell
         +-- project files on /mnt/c through virtiofs
 ```
 
-The primary interface is `wsl-dev shell`: enter interactive WSL Bash at the
-translated Windows project directory and let the normal WSL direnv hook load
-the allowed `.envrc`. A secondary `wsl-dev exec` operation runs editor tasks
-and automation through `direnv exec` without returning descendants to Windows.
+The prototype's primary interface was `wsl-dev shell`: it entered interactive
+WSL Bash at the translated Windows project directory and let the normal WSL
+direnv hook load the allowed `.envrc`. A secondary `wsl-dev exec` operation ran
+editor tasks and automation through `direnv exec` without returning descendants
+to Windows.
 
 ### Mixed process trees fail on common project artifacts
 

@@ -11,6 +11,13 @@ and the deterministic toolchain policy in
 [Select one authoritative project development toolchain](../adr/0021-select-one-project-development-toolchain.md),
 which supersedes these experimental designs.
 
+Under current policy, authoritative Nix package outputs require the Nix
+project toolchain and block mise+Aqua migration until separately removed or
+replaced. An existing Nix project on Windows uses an explicit WSL, Dev
+Container, or wslc process boundary without exporting `/nix/store` into Win32
+`PATH`; the narrow selected wslc bridge belongs to `nix-wslc-devshell`.
+Project toolchain skills do not own task definitions or orchestration.
+
 ## Question
 
 Projects are managed on the Windows filesystem (NTFS) and worked on with
@@ -181,7 +188,7 @@ Critique:
   (agent edits via hook-wrapped commands), watchers inside the
   container see them.
 
-## Part 4: Layered recommendation (pre-PoC)
+## Part 4: Historical layered recommendation (pre-PoC)
 
 | Layer | Scope | Mechanism |
 |---|---|---|
