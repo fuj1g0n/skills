@@ -1,8 +1,0 @@
-{
-  "name": "wsl-direnv-project-shell-poc",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test test/node.test.mjs"
-  }
-}

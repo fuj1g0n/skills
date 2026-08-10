@@ -6,7 +6,10 @@ type: Research
 
 Date: 2026-08-08
 Author: @fuj1g0n (with GitHub Copilot)
-Status: working note
+Status: concluded
+
+Outcome: this research informed the deterministic single-toolchain policy in
+[Select one authoritative project development toolchain ADR](../adr/0021-select-one-project-development-toolchain.md).
 
 ## Question
 
@@ -100,7 +103,7 @@ The tracked repository state has one `package.json` and no
 |---|---|---|
 | `.github/workflows/features.yml` | Runs `npm install -g @devcontainers/cli` in two jobs | No version or lock; resolves the current dist-tag and its current dependency graph. This is the clearest existing floating npm path. |
 | `.apm/skills/missing-tools/SKILL.md` | Recommends `npx -y prettier --check .` for one-shot Node tools | A package version is omitted, so `npx` may download a current release outside a committed lock. Corporate use must not follow this example. |
-| `poc/wsl-dev/fixture/package.json` | Defines `npm test`, which runs the Node built-in test runner | It declares no dependencies and has no install step; npm is only a script dispatcher here. |
+| Removed PR #16 PoC fixture | Defined `npm test`, which ran the Node built-in test runner | It declared no dependencies and had no install step; npm was only a script dispatcher there. |
 | Proposed native Windows layer | Would add `markdownlint-cli2@0.22.1` and its lockfile | The top-level package and every transitive lock entry must be admitted before `npm ci` can succeed. |
 | Existing Nix shell | Supplies `markdownlint-cli2` from pinned nixpkgs | It is not an npm bootstrap at execution time; Nix remains an independent fallback subject to the corporation's Nix/cache controls. |
 
@@ -285,54 +288,35 @@ artifact. Downloading a third-party build, cross-compiling an unmaintained
 binary, or silently substituting another formatter would weaken the contract
 more than it helps.
 
-Keep formatting Nix files behind an explicit WSL Nix command. This is a small
-and honest boundary because:
+For an existing Nix project, keep formatting Nix files behind the selected WSL
+or container boundary. This is an honest boundary because:
 
 * Nix files are already Linux environment definitions;
 * the formatter version remains fixed by the existing nixpkgs pin;
-* ordinary Windows tasks such as Markdown linting need not pay WSL/Nix startup
-  cost; and
 * CI can continue to use the authoritative Nix environment.
 
-The fallback should be command-scoped, for example a `just` recipe that calls
-the existing WSL execution helper. Linux developers can continue to execute
-`nixfmt` directly. Do not export `/nix/store` paths into Win32 `PATH`.
+Do not add a command-scoped WSL Nix fallback to a mise project. The lack of a
+supported native `nixfmt` artifact is a selection or migration constraint: a
+mise project must remove or replace that requirement as part of an explicitly
+authorized full cutover. Do not export `/nix/store` paths into Win32 `PATH`.
 
-## Recommended target model
+## Deterministic target model
 
-Adopt a layered contract:
+Do not adopt the earlier layered Nix-plus-mise contract. Apply one development
+toolchain authority:
 
-| Layer | Owner | Repository state | Responsibility |
-|---|---|---|---|
-| Bootstrap | WinGet, Scoop, or checksum-pinned official archive, as corporate policy permits | documented mise version and installer evidence | Install the primary manager without npm |
-| Project selection | mise | `mise.toml` and `mise.lock` where useful | Select native Node through its core backend and standalone CLIs through Aqua/checksummed releases; expose tasks and environment |
-| Node dependencies | approved npm CLI and corporate registry | `package.json`, `package-lock.json`, and registry configuration | Install the admitted `markdownlint-cli2` graph with `npm ci` |
-| Task interface | `just` | existing `justfile` | Stable commands for humans and agents |
-| Linux-only tools | WSL Nix | existing flake, shell, and npins pin | `nixfmt` and Linux parity checks |
-| CI authority | Nix initially | existing Linux environment | Detect divergence during migration |
+| Project state | Development authority | Windows participation |
+|---|---|---|
+| Existing Nix development setup | Nix manifests and pins | Enter through WSL, a Dev Container, or another selected Linux boundary |
+| New or existing mise setup | `mise.toml`, `mise.lock`, and Aqua/native artifacts | Run native tools directly; keep language dependency locks separate |
+| Explicit Nix-to-mise migration | One transactional full cutover | Remove the old Nix development authority after isolated validation |
 
-The initial Windows declaration should conceptually be:
-
-```toml
-min_version = "<reviewed mise version>"
-
-[settings]
-lockfile = true
-
-[tools]
-"aqua:casey/just" = "1.57.0"
-node = "24.13.0"
-
-[tasks.install]
-run = "npm ci"
-
-[tasks.lint]
-run = "npm exec --no -- markdownlint-cli2 \"**/*.md\""
-```
-
-Here `npm exec --no --` means "do not install a missing command." It is not a
-substitute for the preceding admitted `npm ci`. Never use `npx`, bare
-`npm exec`, `@latest`, or an omitted version to repair a missing tool.
+Machine bootstrap, language dependency graphs, and task recipes retain their
+own ownership boundaries; they do not become a second project development
+toolchain. On the mise route, `npm exec --no --` means "do not install a
+missing command" and is not a substitute for a preceding admitted `npm ci`.
+Never use `npx`, bare `npm exec`, `@latest`, or an omitted version to repair a
+missing tool.
 
 The corporate registry must be configured by the approved machine, user, or
 repository `.npmrc` mechanism. Do not embed its URL or credentials in this
@@ -514,14 +498,20 @@ lock exists, work is blocked pending the corporate owner.
 
 ## Recommendation
 
-Use **mise as the primary Windows project orchestrator**, not as a claim of
-Nix-equivalent closure reproducibility. Use **Aqua through mise for `just`**,
-**mise's non-npm backend for Node selection**, and **an approved npm CLI,
-committed npm lockfiles, and corporate-registry `npm ci` for
-`markdownlint-cli2`**. Do not use mise's `npm:` backend, npm, `npx`, or Corepack
-as an always-latest bootstrap path. Keep **WSL Nix as the explicit `nixfmt` and
-Linux-parity fallback**. Use WinGet, Scoop, or a checksum-pinned official mise
-archive only when that source is allowed by corporate policy.
+For a project that requires native Windows participation, use **mise as the
+authoritative project development toolchain**, not as a claim of Nix-equivalent
+closure reproducibility. Use **Aqua through mise for `just`**, **mise's non-npm
+backend for Node selection**, and **an approved npm CLI, committed npm
+lockfiles, and corporate-registry `npm ci` for `markdownlint-cli2`**. Do not use
+mise's `npm:` backend, npm, `npx`, or Corepack as an always-latest bootstrap
+path. Use WinGet, Scoop, or a checksum-pinned official mise archive only when
+that source is allowed by corporate policy.
+
+Do not retain Nix as a fallback authority inside the same mise project. An
+existing Nix project, or a project with authoritative Nix package outputs,
+keeps Nix and uses WSL or a container when opened from Windows. The lack of a
+native `nixfmt` artifact is therefore a toolchain-selection constraint, not a
+reason to mix Nix and mise development manifests.
 
 Pixi is the stronger alternative when a repository's center of gravity is a
 Conda/Python/native-library environment. It is not the strongest fit for this
