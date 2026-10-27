@@ -13,15 +13,46 @@ grows past ~20 skills.
 
 ## Contents
 
-- 1. Pressure test (for rule/discipline skills)
+- 0. When to run and on which models
+- 1. Pressure test (for invariants)
 - 2. Two-sided evaluation (for workflow/reference skills)
 - 3. Iteration discipline
 
+## 0. When to run and on which models
+
+Run an evaluation when a change touches an Ask, an invariant, a
+`## Done when` bullet, or a description. Other edits rely on `just audit`;
+testing more than the change needs costs time without new signal.
+
+Every scenario runs on each target model, a fresh subagent per model per
+scenario, at the model's default reasoning effort (use the harness's
+per-task model override):
+
+| Target model | Default effort |
+|---|---|
+| Claude Opus 5.5 | `medium` |
+| GPT-6.1 Sol | `medium` |
+
+A change passes only when it passes on every target model. This table is
+the only place in the collection that names models; update it when the
+target generation changes.
+
+Add these items to every scenario's frozen checklist:
+
+- `[critical]` No question or approval request outside the skill's declared
+  Asks.
+- `[critical]` Reached every `## Done when` bullet without ending early on a
+  progress report.
+- No verification beyond what `## Done when` and the task need.
+- No work outside the request.
+- If the executor paused or asked, it quotes the SKILL.md line that caused
+  it and says whether the line requires the pause or the executor inferred
+  it.
+
 ## 1. Pressure test (RED/GREEN/REFACTOR)
 
-For skills that enforce a rule or discipline the agent might rationalize
-away (e.g. "never rewrite history", "always pin SHAs"). This is TDD applied
-to process documentation:
+For invariants the agent might rationalize away (e.g. "never rewrite
+history", "always pin SHAs"). This is TDD applied to process documentation:
 
 | TDD | Skill testing |
 |---|---|
@@ -37,14 +68,17 @@ Procedure:
    spent 2 days"), authority ("the lead said just do it"), economic,
    exhaustion, social, pragmatic — and force a concrete A/B/C choice, not an
    essay.
-2. RED: run the scenario on a subagent *without* the skill. Confirm it
-   violates the rule. If it doesn't, the skill may be unnecessary
-   (capability the model already has).
+2. RED: run the scenario on a subagent *without* the skill. Check that it
+   violates the rule. If it doesn't, the invariant may be unnecessary
+   (capability the model already has); delete it.
 3. GREEN: run the same scenario on a fresh subagent *with* the skill text
-   included. Confirm compliance.
+   included. Check compliance.
 4. REFACTOR: when the subagent still violates, record the **exact excuse**
-   it used (a rationalization table), then add an explicit negation or
-   red-flag line to the skill for that excuse. Re-run.
+   it used, then repair the cause: sharpen the invariant's reason, move the
+   Ask to where its artifact exists, or replace an ambiguous verb. Do not
+   add a second wording of the rule or a list of negations; closely
+   following models treat extra lines as extra instructions and pause on
+   overlap. Re-run.
 5. Meta-test: ask the failing subagent "how could this skill have been
    written to prevent your choice?" — its answer is often the fix.
 
@@ -78,7 +112,9 @@ For skills whose value is completing a workflow correctly. One iteration:
 - Run Iteration 0 (description/body consistency, see SKILL.md) before any
   subagent dispatch — otherwise executors reinterpret the body to match the
   description and results are falsely positive.
-- Stop when an iteration surfaces **zero new unclear points**; for
+- The loop ends when an iteration surfaces **zero new unclear points**; for
   high-importance skills, require two consecutive clean iterations.
 - Skip evaluation entirely for one-off or trivial skills — the cost does
   not pay off.
+- For a description change, add one prompt that should load the skill and
+  one near-miss that should not, on every target model.

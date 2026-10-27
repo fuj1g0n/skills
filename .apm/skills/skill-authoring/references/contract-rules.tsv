@@ -1,0 +1,16 @@
+id	kind	target	level	pattern	except	message
+C01	forbid	body	fail	\b(MUST|NEVER|ALWAYS|ONLY|NOT|CRITICAL|IMPORTANT|REQUIRED)\b	-	uppercase emphasis; state the reason in ## Invariants
+C02	forbid	body	fail	^You are\b	-	role prompt; state the task
+C03	forbid	body	fail	\b[Ss]top (and|,|then) (invoke|return|ask|obtain|hand|require|clarif)	-	stop as a transfer; use Ask, Hand off, or Block
+C04	forbid	body	warn	\b[Ss]top(s|ped)?\b	-	bare stop; use Ask, Hand off, Block, or Done when
+C05	forbid	body	warn	\b[Cc]onfirm(s|ed|ation)?\b	[Aa]sk the user to confirm	confirm; write verify for checks or Ask the user to confirm for gates
+C06	forbid	body	fail	\b([Ss]elf-review|[Dd]ouble-check|[Rr]e-verify|review your own)	-	generic self-verification; list external checks under ## Done when
+C07	require-heading	skill	fail	^## Done when$	-	missing ## Done when
+C08	forbid	body	fail	^## (Avoid|Prohibitions|Hard (boundaries|constraints?)|History Safety)$	-	prohibition heading; use ## Invariants
+C09	section-each	skill	warn	\bbecause\b	## Invariants	invariant without a reason (because ...)
+C10	max-count	skill	warn	\b[Aa]sk the user\b	2	more than two Ask gates
+C11	forbid	body	fail	([Ww]hen in doubt|[Ii]f unclear|[Aa]sk when .*unclear|^\| *Unclear *\| *[Aa]sk)	-	ambiguity gate; state a default and report it
+C12	forbid	desc	fail	(\b[Ee]ven (if|when|without)\b|[Pp]roactive|auto-invoke|\bONLY\b|do NOT)	-	pressure language in description
+C13	handoff	body	fail	[Hh]and off to `[a-z0-9-]+`	-	handoff target is not a skill in this collection
+C14	exclude-path	-	-	^adr/references/(madr-template|0000-)	-	vendored upstream text
+C15	forbid	body	fail	\bADR-[0-9]{4}\b	-	repository decision-record citation; state the rule itself

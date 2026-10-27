@@ -1,0 +1,29 @@
+name: skills
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".apm/skills/**"
+      - ".github/workflows/skills.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".apm/skills/**"
+      - ".github/workflows/skills.yml"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Audit fixtures
+        run: .apm/skills/skill-authoring/scripts/test-audit.sh
+
+      - name: Audit skills
+        run: .apm/skills/skill-authoring/scripts/audit.sh
+
+      - name: Routing corpus and taxonomy
+        run: .apm/skills/project-toolchain-selection/scripts/validate-taxonomy.sh

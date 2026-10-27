@@ -27,30 +27,11 @@ description: One or two sentences. What the skill does and when to use it.
 
 - `name`: ≤ 64 chars, lowercase letters / numbers / hyphens only, no
   `anthropic` or `claude`.
-- `description`: ≤ 1024 chars hard limit; **aim for ~20–35 words
-  (~100–250 chars)**, third person, no XML tags. State **what** the skill
-  does and **when** to trigger.
-- **Never summarize the skill's workflow in the description.** Tested
-  finding (obra/superpowers): given a workflow summary, agents follow the
-  description *instead of reading the body*. Describe triggering conditions
-  only, and cover the keywords users actually emit: symptoms, error
-  messages, tool names, synonyms.
-- **Two-track policy** (mizchi/skills): *domain* skills get pushy
-  auto-trigger descriptions — "Use when ... Trigger on [symptoms] even if
-  the user does not name [domain]". *Meta* skills that operate on the agent
-  or on skills themselves get explicit-only descriptions — "Invoke ONLY when
-  the user explicitly asks ...; do NOT auto-invoke on [ambient signals]".
-
-Good / bad:
-
-```yaml
-# Good — what + when, triggers only
-description: Creates atomic Conventional Commits. Use when committing code changes, splitting hunks into revertable units, or writing detailed commit messages.
-# Bad — vague
-description: Helps with commits.
-# Bad — workflow summary; agent may follow this instead of the body
-description: Use when committing - stages hunks one by one, generates a message, then pushes.
-```
+- `description`: ≤ 1024 chars hard limit; aim for ~20–35 words. What the
+  skill does and when to trigger, no workflow summary: given one, agents
+  follow the description instead of reading the body (obra/superpowers).
+  Full policy and examples: [references/contract.md](references/contract.md)
+  ("Descriptions").
 
 ## Body
 
@@ -77,6 +58,14 @@ copies go stale and cost tokens.
 Scripts: deterministic, repeated, or fragile operations go in `scripts/` —
 executed, not loaded; only stdout costs tokens.
 
+## Authoring contract
+
+Write every gate, handoff, completion condition, and absolute rule with the
+verbs and sections in [references/contract.md](references/contract.md):
+Ask, Hand off, Block, `## Done when`, and `## Invariants`. Read it before
+writing or substantially editing a skill. `scripts/audit.sh` enforces the
+rules in `references/contract-rules.tsv`.
+
 ## Overlap between skills
 
 When two skills touch the same ground, pick the lightest fix: **cross-link**
@@ -93,11 +82,10 @@ an executor will "reinterpret" the body to match the description
 
 ## Testing a skill
 
-For skills that must hold under pressure or whose value is uncertain, run
-the subagent-based tests in
-[references/testing-skills.md](references/testing-skills.md): RED/GREEN
-pressure scenarios and a trimmed two-sided evaluation (blank-slate executor
-+ requirements checklist + self-reported unclear points).
+When a change touches an Ask, an invariant, a `## Done when` bullet, or a
+description, run the cross-model evaluation in
+[references/testing-skills.md](references/testing-skills.md). Other edits
+need only `just audit`.
 
 ## Auditing the collection
 
@@ -105,17 +93,20 @@ Periodically, or after several skills changed, audit the whole collection:
 
 ```
 Skill audit:
-- [ ] 1. Run scripts/audit.sh for the mechanical pass
+- [ ] 1. Run `just audit` for the mechanical pass
 - [ ] 2. Audit flagged skills against references/audit-checks.md
 - [ ] 3. Cross-skill duplication pass (link or merge)
 - [ ] 4. Documentation & repo-file references pass
-- [ ] 5. Report findings, then fix with confirmation and re-run audit.sh
+- [ ] 5. Fix the findings, then re-run `just audit`
 ```
 
-The script (`scripts/audit.sh [SKILLS_DIR]`, default `.apm/skills/` of this
-repository) prints one row per skill — line count, name/description lengths,
-references/scripts presence — flagging hard violations with `!`. The
-judgement checks live in
+`just audit` runs `scripts/test-audit.sh` (fixtures for every contract
+rule), `scripts/audit.sh [SKILLS_DIR]` (default `.apm/skills/` of this
+repository: one row per skill with line count, name/description lengths,
+references/scripts presence, then contract findings), and the
+`project-toolchain-selection` routing validators. The audit exits 1 on any
+hard (`!`) flag or fail-level finding; warnings need review but do not
+fail. The judgement checks live in
 [references/audit-checks.md](references/audit-checks.md). Find duplication
 candidates with:
 
@@ -125,9 +116,15 @@ rg -N '^description:' .apm/skills/*/SKILL.md
 
 ## Release checks
 
-Before committing a skill change, run `apm audit` (hidden Unicode, tampered
-generated files); then release via the `skill-management` workflow (commit →
-push → re-pin → `apm install -g` → verify the deploy directory).
+Before committing a skill change, run `just audit` and `apm audit` (hidden
+Unicode, tampered generated files); then release via the
+`skill-management` workflow.
+
+## Done when
+
+- `just audit` and `apm audit` exit 0.
+- Every description trigger maps to scope the body covers (Iteration 0).
+- Cross-model evaluation passed when the change required it.
 
 ## Attribution
 
@@ -138,9 +135,11 @@ push → re-pin → `apm install -g` → verify the deploy directory).
   pressure-test methodology adapted from
   [obra/superpowers](https://github.com/obra/superpowers) `writing-skills`
   (MIT).
-- Two-track description policy, Iteration-0 check, and two-sided evaluation
-  adapted from [mizchi/skills](https://github.com/mizchi/skills)
-  `meta/optimizing-descriptions` + `meta/empirical-prompt-tuning` (MIT).
-- Progressive-disclosure framing and "pushy description" doctrine from
+- Iteration-0 check and two-sided evaluation adapted from
+  [mizchi/skills](https://github.com/mizchi/skills)
+  `meta/empirical-prompt-tuning` (MIT).
+- Progressive-disclosure framing from
   [anthropics/skills](https://github.com/anthropics/skills) `skill-creator`
   (Apache 2.0).
+- Authoring contract derived from the Anthropic and OpenAI prompting guides
+  linked in `references/contract.md`.
