@@ -1,4 +1,4 @@
-# Slim zero-inputs wrapper (ADR-0014): nixpkgs is pinned by npins, not by
+# Slim zero-inputs wrapper: nixpkgs is pinned by npins, not by
 # flake inputs, to keep cold `nix develop` evaluation fast.
 {
   description = "Development environment for fuj1g0n/skills";

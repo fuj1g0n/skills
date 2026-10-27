@@ -42,9 +42,13 @@ that the decision falls below the bar. A rejected option is worth an ADR
   into good prose is the job.
 - **One ADR, one decision**, because two decisions in one record cannot be
   superseded separately.
-- **Accepted ADRs change only in status and supersede links**, because the
-  log is history; a changed or reversed decision gets a new ADR that
-  supersedes the old one.
+- **A final ADR changes only in status and supersede links**, because
+  readers and tooling rely on the committed record; a changed or reversed
+  decision gets a new ADR that supersedes it. An ADR is final once a commit
+  holds it with `status: accepted`, that is, when
+  `git log --oneline -G '^status: "?accepted' -- <adr-file>` prints a
+  commit. Until then (`proposed`, or `accepted` but uncommitted), revise
+  it freely: title, filename, number, options, outcome, or status.
 - **Scaffolding stays canonical English** (frontmatter keys, status values
   `proposed`, `accepted`, `rejected`, `deprecated`, `superseded by
   ADR-NNNN`, MADR section headings), because tooling such as Backstage and
@@ -129,9 +133,10 @@ user's decision becomes `0001`. Tell the user about the seed file.
 
 ### 6. Supersede an old ADR
 
-When the new decision replaces an old one, follow the exact link/status
-surgery in [references/supersede-workflow.md](references/supersede-workflow.md) —
-the old ADR gets status and `More Information` edits only.
+When the new decision replaces a final ADR, follow the exact link/status
+surgery in [references/supersede-workflow.md](references/supersede-workflow.md):
+the old ADR gets status and `More Information` edits only. A
+non-final ADR is revised in place instead.
 
 ### 7. Hand off
 
@@ -144,8 +149,8 @@ edited, by path.
   and the status is a canonical value.
 - Headings are the literal MADR English headings, and every non-trivial ADR
   has at least one `Bad` consequence.
-- No `TODO(user):` marker remains, and superseded files differ only in
-  status and `More Information`.
+- No `TODO(user):` marker remains, and final ADRs differ only in status and
+  `More Information`.
 
 ## Attribution
 

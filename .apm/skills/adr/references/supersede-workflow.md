@@ -1,7 +1,8 @@
 # Supersede Workflow
 
-Exact surgery when a new decision (ADR-MMMM) replaces an old one (ADR-NNNN).
-Accepted ADRs are immutable except for these edits.
+Exact surgery when a new decision (ADR-MMMM) replaces a final ADR
+(ADR-NNNN): one committed with `status: accepted`. Final ADRs take only
+these edits; a non-final ADR is revised in place instead.
 
 1. New ADR frontmatter: `status: accepted` and, under `## More Information`,
    a line `Supersedes [ADR-NNNN](NNNN-old-slug.md).`
