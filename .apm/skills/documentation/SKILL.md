@@ -3,8 +3,8 @@ name: documentation
 description: >
   Structures and writes project documentation. Use when authoring or
   reorganizing READMEs, CHANGELOGs, docs/ trees, OKF knowledge bundles,
-  tutorials, how-to guides, or reference/explanation pages — trigger on
-  documentation-format work even when no framework is named.
+  tutorials, how-to guides, or reference/explanation pages, including
+  Diátaxis and Keep a Changelog work.
 ---
 
 # Project Documentation
@@ -89,11 +89,19 @@ directory). Inside one:
   lychee/markdown-link-check, Vale, ...); do not introduce new ones
   unasked.
 
+## Done when
+
+- The repository's configured checkers pass on the touched files.
+- Only the requested pages changed, and each page serves one Diátaxis type.
+- Written pages are as long as the reader's need and no longer: no filler
+  sections or summaries that repeat the page.
+
 ## Boundaries
 
 - Decision records (MADR, statuses, supersede surgery) → `adr` skill.
 - SKILL.md authoring → `skill-authoring` skill.
-- AGENTS.md / copilot-instructions authoring: out of scope (ADR-0016).
+- AGENTS.md / copilot-instructions authoring: out of scope; agent
+  instructions follow their harness's own conventions.
 
 ## Attribution
 
@@ -105,5 +113,5 @@ directory). Inside one:
   `changelog-automation` (MIT).
 - Diátaxis concepts from [diataxis.fr](https://diataxis.fr/) by Daniele
   Procida (no formal license — concepts only, canonical site linked).
-- OKF conventions per ADR-0017/ADR-0018 of the fuj1g0n/skills decision
-  log.
+- OKF conventions from the
+  [OKF spec](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).

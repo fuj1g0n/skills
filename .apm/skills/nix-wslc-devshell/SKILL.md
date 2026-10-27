@@ -35,20 +35,29 @@ Do not own:
 
 ## Workflow
 
-1. Confirm `wslc version` succeeds and the existing Nix project is the
+1. Check that `wslc version` succeeds and the existing Nix project is the
    selected authority.
 2. Require LF for shell, Nix, and direnv files consumed in the container.
 3. Inspect the project's accepted wslc image, mounts, persistent Nix volume,
-   user, activation command, and wrapper. If no bridge exists, stop and obtain
-   approval for that repository architecture change before adding one.
+   user, activation command, and wrapper. If no bridge exists, draft one and
+   Ask the user to approve adding it, presenting the image, mounts, volume,
+   user, and wrapper; it changes the repository architecture.
 4. Provision or start the accepted per-project container without changing the
    Nix tool pins, then run existing devShell commands through its wrapper.
    Keep Git, GitHub authentication, and native repository operations on
    Windows.
-5. Verify the command executes in Linux, resolves tools from the Nix
-   devShell, preserves the working directory, and does not mutate Win32
-   `PATH`.
 
-Existing task recipes may be run for validation, but this skill must not edit
-them. Requests to change the devShell hand off to `nix-project-toolchain`;
-requests to add package outputs hand off to `nix-package-outputs`.
+Existing task recipes may be run for validation, but this skill does not edit
+them. Hand off to `nix-project-toolchain` for devShell changes and to
+`nix-package-outputs` for package outputs.
+
+## Invariants
+
+- No `/nix/store` path in Win32 `PATH`, because native Windows tools would
+  resolve Linux binaries.
+
+## Done when
+
+- The command runs in Linux, resolves tools from the Nix devShell, and keeps
+  the working directory.
+- Win32 `PATH` and the Nix tool pins are unchanged.

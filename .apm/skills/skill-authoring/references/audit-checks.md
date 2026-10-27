@@ -1,10 +1,10 @@
 # Skill Audit Checks
 
 The per-dimension checklist for the collection audit. The authoring rules
-these checks enforce live in `SKILL.md` — read it for the *why* and the fix
-patterns; this file is the *what to verify*. `scripts/audit.sh` covers the
-countable parts (lengths, references/ and scripts/ presence); the rest are
-judgement calls.
+these checks enforce live in `SKILL.md` and `contract.md`; this file is
+the *what to check*. `scripts/audit.sh` covers the countable parts
+(lengths, references/ and scripts/ presence, the rules in
+`contract-rules.tsv`); the rest are judgement calls.
 
 Adapted from ryoppippi/dotfiles skill-maintenance/references/audit-checks.md
 (MIT).
@@ -17,6 +17,7 @@ Adapted from ryoppippi/dotfiles skill-maintenance/references/audit-checks.md
 - 4. Documentation and repo-file references
 - 5. SKILL.md length and splitting
 - 6. Description/body consistency (Iteration 0)
+- 7. Contract adherence
 
 ## 1. Best-practices adherence
 
@@ -41,7 +42,7 @@ Check each skill against Anthropic's best practices
   trimmed unless every clause earns a trigger.
 - Third person; states both **what** and **when**; **no workflow summary**
   (triggers only — see SKILL.md "Frontmatter").
-- Correct track: domain skills pushy, meta skills explicit-only.
+- Neutral trigger language (rule C12 catches the common phrases).
 - The whole metadata set is preloaded into every session, so over-long
   descriptions tax all work, not just this skill.
 
@@ -69,7 +70,7 @@ the canonical content.
 
 ## 4. Documentation and repo-file references
 
-For every skill, confirm it points at sources of truth instead of embedding
+For every skill, check that it points at sources of truth instead of embedding
 copies:
 
 - **Public docs**: a library/tool skill should carry the canonical docs URL.
@@ -99,3 +100,19 @@ For each skill changed since the last audit: do the triggers claimed by the
 description match the scope the body actually covers? A description that
 promises more than the body delivers produces false-positive behavior — the
 agent improvises the missing part. Reconcile description or body.
+
+## 7. Contract adherence
+
+What the rules in `contract-rules.tsv` cannot decide (see `contract.md`):
+
+- Each Ask presents an artifact that exists at that step and sits before
+  the first irreversible action; no two Asks guard the same decision.
+- Each Ask guards an irreversible, architecture, product, or credential
+  decision. Reversible or read-only work proceeds.
+- Invariants hold only rules whose violation is unsafe, irreversible, or
+  crosses an ownership boundary; other rules are workflow defaults.
+- `## Done when` names observable state and is reachable without the user
+  except at declared Asks.
+- No two skills state conflicting facts (paths, owners, defaults). Conflicts
+  make closely-following models pause.
+- Warnings from `audit.sh` are resolved or justified.

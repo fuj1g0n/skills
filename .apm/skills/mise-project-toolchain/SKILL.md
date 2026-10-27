@@ -5,8 +5,8 @@ description: Manages a project's mise+Aqua development toolchain. Use for existi
 
 # mise Project Toolchain
 
-Use this skill only when mise is already authoritative or
-`project-toolchain-selection` has recorded the user's confirmation. Aqua is a
+Use this skill when mise is already authoritative or
+`project-toolchain-selection` has recorded the user's approval. Aqua is a
 mise backend, not a standalone toolchain.
 
 ## Scope contract
@@ -33,18 +33,16 @@ work. Existing tasks may be invoked for validation.
 
 1. Inspect active `mise.toml` or `.mise.toml`, `mise.lock`, CI, editor setup,
    and language-local managers. If authoritative Nix development markers also
-   exist, stop and invoke `project-toolchain-selection`.
-2. Preserve the current setup. For a new project, confirm that the selection
-   record permits mise before creating files.
+   exist, hand off to `project-toolchain-selection`.
+2. Preserve the current setup. For a new project, check that the selection
+   record approves mise before creating files.
 3. Choose an exact version and backend. Read
    [references/backends-and-supply-chain.md](references/backends-and-supply-chain.md)
    for Aqua and corporate npm policy.
-4. Edit project-scoped mise configuration and lock data. Never use floating
-   versions such as `latest`.
+4. Edit project-scoped mise configuration and lock data.
 5. Activate through mise for the current shell, IDE, and agent environment.
-   Keep native Windows paths native; never add `/nix/store` to Win32 `PATH`.
-6. Install from the configured trusted source and verify the resolved version,
-   executable location, checksum/signature policy, and a minimal command.
+   Keep native Windows paths native.
+6. Install from the configured trusted source.
 7. Run existing repository validation or task recipes without redefining
    them.
 
@@ -52,5 +50,21 @@ Language-local managers and committed locks remain authoritative for their
 dependency graphs. This skill may require their normal workflow as a handoff,
 but must not replace it with mise configuration.
 
-Nix package outputs are incompatible with mise as the project development
-toolchain. If any may exist, stop and return to `project-toolchain-selection`.
+If Nix package outputs may exist, hand off to `project-toolchain-selection`.
+
+## Invariants
+
+- No floating versions such as `latest`, because an unpinned tool is a
+  different tool on the next run.
+- No `/nix/store` path in Win32 `PATH`, because native Windows tools would
+  resolve Linux binaries.
+- No mise toolchain beside Nix package outputs, because those outputs need
+  Nix as the development authority.
+
+## Done when
+
+- The project mise configuration and lock data pin the exact version and
+  backend.
+- The installed tool reports that version from the expected executable
+  location, and checksum/signature policy passed.
+- A minimal command runs in the shell, IDE, and agent environment.

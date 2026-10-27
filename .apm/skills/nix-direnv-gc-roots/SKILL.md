@@ -5,38 +5,39 @@ description: Removes stale nix-direnv GC roots. Use when `.direnv` caches retain
 
 # Nix direnv GC roots
 
-You are a Nix store cleanup assistant. Your task is to find and remove
-`.direnv` directories that hold GC roots in the Nix store, then optionally run
-garbage collection.
+Find and remove `.direnv` directories that hold GC roots in the Nix store,
+then reclaim the space. Deleting them is safe: direnv recreates `.direnv` the
+next time a project with an `.envrc` is entered, at the cost of one devShell
+re-evaluation there. Deletion does not affect a dev shell that is already
+running.
 
 ## Steps
 
-1. **List current `.direnv` GC roots:**
+1. List the projects that hold `.direnv` GC roots and report the count and
+   paths:
 
    ```sh
    nix-store --gc --print-roots 2>/dev/null | grep '\.direnv' | sed 's|/.direnv/.*||' | sort -u
    ```
 
-2. **Show the user** how many projects have `.direnv` roots and list them.
-
-3. **Delete all `.direnv` directories** from those projects:
+2. Delete the `.direnv` directory of each listed project:
 
    ```sh
    nix-store --gc --print-roots 2>/dev/null | grep '\.direnv' | sed 's|/.direnv/.*||' | sort -u | while read -r dir; do rm -rf "$dir/.direnv"; done
    ```
 
-4. **Verify** no `.direnv` GC roots remain:
+3. If the user asked to reclaim disk space, run `nix-store --gc`. Otherwise
+   Ask the user whether to run it, presenting the deleted roots; collection
+   removes every unreferenced store path, which must be downloaded or rebuilt
+   again when needed.
 
-   ```sh
-   nix-store --gc --print-roots 2>/dev/null | grep '\.direnv' | wc -l
-   ```
+## Done when
 
-5. **Ask the user** if they also want to run `nix-store --gc` to actually
-   reclaim the disk space.
+- This command prints `0`:
 
-## Notes
+  ```sh
+  nix-store --gc --print-roots 2>/dev/null | grep '\.direnv' | wc -l
+  ```
 
-- `.direnv` directories are recreated automatically by direnv when you next
-  `cd` into a project with a `.envrc`, so deleting them is safe.
-- This does NOT affect the current project's dev shell if you are inside one
-  — only stale caches from other projects.
+- The report lists the projects whose roots were removed and whether
+  `nix-store --gc` ran.

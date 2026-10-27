@@ -12,9 +12,9 @@ Its authoritative presence nevertheless requires
 ## Entry gate
 
 Read the marker rules in `project-toolchain-selection` when output ownership
-is uncertain. If the project currently uses mise for development, do not add
-a package-only flake. Return to selection and obtain approval for Nix to
-become the development toolchain before defining outputs.
+is uncertain. If the project uses mise for development or its authority is
+unknown, hand off to `project-toolchain-selection`, which owns the decision
+for Nix to become the development toolchain.
 
 ## Own
 
@@ -35,17 +35,25 @@ marker classification and handoffs.
 
 ## Workflow
 
-1. Confirm Nix is the authoritative project toolchain and identify the
+1. Check that Nix is the authoritative project toolchain and identify the
    requested output and consumers.
 2. Follow the repository's existing flake, pinning, and `callPackage`
    conventions. Do not reshape the devShell while adding an output.
 3. Define the smallest output-specific expression and preserve exact source
    pins, checksums, runtime closure, metadata, and supported systems.
-4. Evaluate output names, build the requested output, and run relevant checks.
-   Prefer `nix flake show`, `nix build .#<attribute>`, and
-   `nix flake check` when the repository supports them.
-5. Invoke existing release or task commands only for validation; do not edit
+4. Invoke existing release or task commands only for validation; do not edit
    their definitions.
 
 Use `nix-github-rate-limit` for GitHub-backed fetches. A request to add or pin
 development tools belongs to `nix-project-toolchain`.
+
+## Invariants
+
+- No package-output-only flake beside a mise development toolchain, because
+  the outputs need Nix as the development authority.
+
+## Done when
+
+- `nix flake show` lists the requested output, `nix build .#<attribute>`
+  succeeds, and `nix flake check` passes where the repository supports it.
+- The devShell and task definitions are unchanged.

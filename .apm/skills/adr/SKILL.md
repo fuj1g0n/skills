@@ -4,8 +4,7 @@ description: >
   Writes and maintains Architecture Decision Records (MADR format). Use when
   the user wants to record, revise, supersede, or amend an architecture,
   technology, or process decision — "write an ADR", "we decided X over Y",
-  "start a decision log" — even without the acronym ADR; offer proactively
-  when a conversation produces a significant decision.
+  "record why we chose", "start a decision log".
 ---
 
 # Architecture Decision Records (MADR)
@@ -31,27 +30,29 @@ build/deploy strategy. Most decisions do not clear the bar.
 | Team-wide convention (repo layout, release process) | One-off configuration changes |
 | Rejecting a seriously considered option | Choices with no real alternative |
 
-When in doubt, ask the user whether the decision should be recorded. A
-rejected option is worth an ADR (`rejected`) when the rejection must stick.
+Write the ADR when a left-column row matches; otherwise say in the report
+that the decision falls below the bar. A rejected option is worth an ADR
+(`rejected`) when the rejection must stick.
 
-## The contract
+## Invariants
 
-1. **Record, don't invent.** The ADR documents a real decision and the real
-   reasons. Never fabricate options, drivers, metrics, or consequences the
-   user or repository did not establish. Polishing the user's words into
-   good prose is your job; supplying missing facts is not.
-2. **One ADR, one decision.** Two decisions described means two ADRs.
-3. **Accepted ADRs are immutable except their status.** A changed or reversed
-   decision gets a *new* ADR that supersedes the old one; the only legitimate
-   edits to an existing ADR are status changes and supersede links.
-4. **Scaffolding stays canonical English.** Frontmatter keys, status values
-   (`proposed`, `accepted`, `rejected`, `deprecated`, `superseded by
-   ADR-NNNN`), and MADR section headings stay in English so tooling
-   (Backstage, Structurizr `!adrs madr`) parses them. Prose follows the
-   log's existing language; for a fresh log, the conversation language.
-5. **Decision before implementation.** The ADR goes in the same PR as the
-   code change or an earlier one — never document a decision only after
-   quietly implementing it.
+- **Record, don't invent**: no options, drivers, metrics, or consequences
+  the user or repository did not establish, because an ADR that supplies
+  missing facts misleads every later reader. Polishing the user's words
+  into good prose is the job.
+- **One ADR, one decision**, because two decisions in one record cannot be
+  superseded separately.
+- **Accepted ADRs change only in status and supersede links**, because the
+  log is history; a changed or reversed decision gets a new ADR that
+  supersedes the old one.
+- **Scaffolding stays canonical English** (frontmatter keys, status values
+  `proposed`, `accepted`, `rejected`, `deprecated`, `superseded by
+  ADR-NNNN`, MADR section headings), because tooling such as Backstage and
+  Structurizr `!adrs madr` parses them. Prose follows the log's existing
+  language; for a fresh log, the conversation language.
+- **Decision before implementation**: the ADR goes in the same PR as the
+  code change or an earlier one, because a record written after quiet
+  implementation documents a decision nobody could review.
 
 ## File conventions
 
@@ -80,24 +81,25 @@ rejected option is worth an ADR (`rejected`) when the rejection must stick.
 In order: an existing ADR collection (`NNNN-*.md` under `docs/adr/`,
 `docs/decisions/`, `doc/adr/`, `docs/architecture/decisions/`, `adr/`); a
 `.adr-dir` file at the repo root naming the directory; otherwise this is a
-fresh log — default to `docs/adr/`. Peek at one existing ADR before writing:
-if the log follows a different template (e.g. Nygard, no frontmatter), match
-the log's own format and tell the user — a log in two formats is worse than
-either. Offer MADR migration only if the user asks.
+fresh log — default to `docs/adr/`. Check the format in the neighbors read
+in step 2: if the log follows a different template (e.g. Nygard, no
+frontmatter), match the log's own format and tell the user — a log in two
+formats is worse than either. Offer MADR migration only if the user asks.
 
 ### 2. Read the neighbors
 
-Read the two or three most recent ADRs and any ADR the new one supersedes:
-this gives the next number, exact titles for link text, and the house tone.
+Read the two or three most recent ADRs and any ADR the new one supersedes
+for the next number, exact titles for link text, and the house tone.
 
-### 3. Get the substance — or ask
+### 3. Get the substance
 
 An honest ADR needs: **the problem** (why decide now), **the options**
 seriously considered, **the outcome and its justification**, and **the
-trade-offs**. If the conversation already gave all of these, write; if any
-are missing, ask 2–4 targeted questions first — but don't ask what the
-repository already answers. Treat a decision with zero downsides as a red
-flag: ask for the accepted trade-off rather than writing a sales pitch.
+trade-offs**. Take what the conversation and repository establish. If any
+are still missing, write the draft file with each gap marked `TODO(user):`, then
+Ask the user to fill the gaps, presenting the draft and 2–4 targeted
+questions. A decision with zero downsides is a gap: ask for the accepted
+trade-off rather than writing a sales pitch.
 
 ### 4. Write the ADR
 
@@ -131,23 +133,19 @@ When the new decision replaces an old one, follow the exact link/status
 surgery in [references/supersede-workflow.md](references/supersede-workflow.md) —
 the old ADR gets status and `More Information` edits only.
 
-### 7. Self-review and hand off
+### 7. Hand off
 
-Check: filename number matches the sequence; frontmatter parses as YAML;
-status is one of the canonical values; headings are the literal MADR English
-headings; Context is neutral; at least one negative consequence; nothing in
-the file that the user or repository didn't establish; superseded files show
-diffs in status/More Information only. If the log keeps a README index,
-update it. Report every file created or edited, by path.
+If the log keeps a README index, update it. Report every file created or
+edited, by path.
 
-## Reference files
+## Done when
 
-| File | Read it when |
-|---|---|
-| `references/madr-template.md` | Before writing — the full MADR 4.0 template with embedded guidance. |
-| `references/madr-template-minimal.md` | For small, uncontested decisions. |
-| `references/0000-use-markdown-architectural-decision-records.md` | When initializing a fresh log. |
-| `references/supersede-workflow.md` | When a new decision replaces an old ADR. |
+- The filename number follows the sequence, the frontmatter parses as YAML,
+  and the status is a canonical value.
+- Headings are the literal MADR English headings, and every non-trivial ADR
+  has at least one `Bad` consequence.
+- No `TODO(user):` marker remains, and superseded files differ only in
+  status and `More Information`.
 
 ## Attribution
 
