@@ -5,9 +5,8 @@ description: Operational rules for managing agent skills via APM (Agent Package 
 
 # Skill Management via APM
 
-All skill deployment goes through APM. Never copy skill files manually into
-`~/.agents/skills/`, `.claude/skills/`, or other deploy targets — those
-directories are APM-managed output.
+All skill deployment goes through APM; deploy targets such as
+`~/.agents/skills/` and `.claude/skills/` are APM-managed output.
 
 For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
 (from `microsoft/apm/packages/apm-guide`).
@@ -20,28 +19,20 @@ For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
 - **Project scope manifest**: `apm.yml` in the repo; commit `apm.yml` and
   `apm.lock.yaml`, gitignore `apm_modules/`
 
-## Pinning rules
-
-- Always pin dependencies to a **full 40-char commit SHA** (or a release
-  tag). Floating branches drift.
-- Short SHAs do not work: APM clones with `--branch=<ref>`, which only
-  resolves branch/tag names and full SHAs.
-
 ## Editing personal skills
 
-1. Edit under `~/workspace/github/skills/.apm/skills/<name>/SKILL.md`.
-2. Commit and push (`main`).
+1. Edit under `~/workspace/github.com/fuj1g0n/skills/.apm/skills/<name>/`.
+2. Commit and land the change on `main` (push, or merge the PR), then
+   `git switch main && git pull --ff-only` so `HEAD` is the landed commit.
 3. Update the pin in `~/.apm/apm.yml`:
 
    ```sh
-   cd ~/workspace/github/skills && FULL=$(git rev-parse HEAD)
+   cd ~/workspace/github.com/fuj1g0n/skills && FULL=$(git rev-parse HEAD)
    sed -i "s|fuj1g0n/skills#[0-9a-f]*|fuj1g0n/skills#$FULL|" ~/.apm/apm.yml
    cd ~/.apm && apm install -g
    ```
 
-4. Verify: skills listed in the install output and present in
-   `~/.agents/skills/`.
-5. If APM reports a skipped removal ("not owned by APM or modified"), remove
+4. If APM reports a skipped removal ("not owned by APM or modified"), remove
    the stale directory manually and re-run.
 
 ## Adopting third-party skills
@@ -53,8 +44,9 @@ in every conversation. Install deliberately.
    installed skills (`ls ~/.agents/skills/`). Do not install near-duplicates.
 2. **Only install for recurring needs.** One-off tasks are solved inline.
 3. **Read the SKILL.md before installing.** Descriptions can oversell;
-   verify the instructions actually fit this environment (Nix, WSL2, uv,
-   just, bash).
+   check that the instructions fit this environment (WSL2, bash, the
+   project toolchains owned by `project-toolchain-selection`) and do not
+   contradict installed skills.
 4. **Check the license.** If the upstream repo has no license, do not copy
    its text into the personal repo — either install it as an APM dependency
    as-is, or write an original skill inspired by the concepts.
@@ -93,7 +85,7 @@ classified as `skill_bundle` and its `apm.yml` dependencies are ignored.
 |-----------|-------|
 | Personal workflow, applies everywhere | user (`apm install -g`, `~/.apm/apm.yml`) |
 | Project/team convention, tied to one repo | project (`apm.yml` in repo, commit lockfile) |
-| Unclear | ask the user |
+| Unclear | project scope inside the repository the skill serves, otherwise user scope; report the choice |
 
 ## Removing skills
 
@@ -105,12 +97,18 @@ Then verify the deploy directory is gone from `~/.agents/skills/`. If a skill
 was hand-modified after deployment, APM refuses to remove it — delete
 manually.
 
-## Common mistakes
+## Invariants
 
-| Mistake | Fix |
-|---|---|
-| Editing files in `~/.agents/skills/` directly | Edit the source repo, push, re-pin, `apm install -g` |
-| Installing skills "just in case" | Install only for a recurring, near-term need |
-| Short SHA in `apm.yml` | Use the full 40-char SHA |
-| Copying unlicensed skill text into the personal repo | Depend on it via APM, or write an original adaptation |
-| Forgetting to update the pin after pushing | The deployed skill silently stays stale; always re-pin and reinstall |
+- Edit sources, never deploy targets, because APM overwrites or refuses to
+  remove hand-modified output.
+- Pin every dependency to a full 40-char commit SHA or a release tag,
+  because floating branches drift and APM clones with `--branch=<ref>`,
+  which resolves only branch/tag names and full SHAs.
+- No unlicensed upstream text in the personal repo, because only MIT/Apache
+  text may be adapted; depend on it via APM or write an original instead.
+
+## Done when
+
+- `~/.apm/apm.yml` pins the pushed commit's full SHA.
+- `apm install -g` lists the changed skills, and `~/.agents/skills/` holds
+  the new content (or no longer holds a removed skill).

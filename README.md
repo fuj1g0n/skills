@@ -16,7 +16,7 @@ eventually materialize as skills.
 | Skill | Purpose | Adapted from |
 |-------|---------|--------------|
 | [skill-management](.apm/skills/skill-management/SKILL.md) | Operational rules: all skill deployment via APM, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
-| [skill-authoring](.apm/skills/skill-authoring/SKILL.md) | Quality rules for writing skills: description discipline, length thresholds, collection audit (`audit.sh`), subagent-based testing | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
+| [skill-authoring](.apm/skills/skill-authoring/SKILL.md) | Quality rules for writing skills: authoring contract (Ask, Hand off, Block, Done when, Invariants) enforced by `just audit`, description discipline, cross-model subagent testing | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
 | [adr](.apm/skills/adr/SKILL.md) | Write and maintain Architecture Decision Records in MADR 4.0 format (trigger calibration, supersede workflow, vendored MADR templates) | original (adapted from [cassiobotaro/skills](https://github.com/cassiobotaro/skills), [wshobson/agents](https://github.com/wshobson/agents), [github/awesome-copilot](https://github.com/github/awesome-copilot), all MIT; MADR templates from [adr/madr](https://github.com/adr/madr)) |
 | [documentation](.apm/skills/documentation/SKILL.md) | Project documentation formats: Diátaxis docs/ organization, standard-readme, Keep a Changelog, docs-as-code hygiene, OKF bundle conventions | original (adapted from [RichardLitt/standard-readme](https://github.com/RichardLitt/standard-readme) and [wshobson/agents](https://github.com/wshobson/agents), both MIT; concepts from [diataxis.fr](https://diataxis.fr/) and [keepachangelog.com](https://keepachangelog.com/)) |
 | [project-toolchain-selection](.apm/skills/project-toolchain-selection/SKILL.md) | Select one authoritative Nix or mise+Aqua project development toolchain using continuity, package constraints, and participant platforms | original |
@@ -34,8 +34,7 @@ eventually materialize as skills.
 Project development has exactly one source of truth: Nix or mise+Aqua. Nix
 package outputs require Nix development; package-only flakes cannot accompany
 a mise toolchain. Toolchain skills may pin a task runner but do not define
-recipes. See proposed
-[ADR-0021](docs/adr/0021-select-one-project-development-toolchain.md).
+recipes. See `project-toolchain-selection`.
 
 ## Install
 
