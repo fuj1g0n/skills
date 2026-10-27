@@ -1,6 +1,6 @@
 # Nix Development File Patterns
 
-Preserve a project's established Nix layout. For a newly confirmed Nix
+Preserve a project's established Nix layout. For a newly approved Nix
 toolchain, this repository prefers a zero-inputs flake with npins-pinned
 nixpkgs and a separate development shell.
 

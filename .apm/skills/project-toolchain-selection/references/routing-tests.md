@@ -36,9 +36,11 @@ collection available. Freeze this checklist before execution:
 - The response distinguishes selection, implementation, and handoff.
 - The executor reports unclear points and discretionary fill-ins.
 
-Success requires every critical item. A failed executor must quote its exact
-rationalization; tighten only the canonical owner or selector, then rerun
-with a new executor.
+Success requires every critical item on every target model listed in the
+`skill-authoring` testing reference. A failed executor must quote its exact
+rationalization; repair the cause in the canonical owner or selector (a
+sharper reason, a moved Ask, an unambiguous verb), not a second wording of
+the rule, then rerun with a new executor.
 
 ## Pressure coverage
 

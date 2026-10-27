@@ -5,8 +5,8 @@ description: Manages a project's Nix development toolchain. Use for existing Nix
 
 # Nix Project Toolchain
 
-Use this skill only when Nix is already authoritative or
-`project-toolchain-selection` has recorded the user's confirmation.
+Use this skill when Nix is already authoritative or
+`project-toolchain-selection` has recorded the user's approval.
 
 ## Scope contract
 
@@ -28,36 +28,46 @@ Do not own:
 Installing and pinning `just` is in scope. Editing `justfile` recipes is normal
 repository task work. Existing recipes may be invoked for validation.
 
-## Hard constraint
-
-Authoritative Nix package outputs require this Nix development toolchain, but
-their definitions belong to `nix-package-outputs`. Never propose a mise
-toolchain plus package-output-only flake.
-
 ## Workflow
 
 1. Inspect active Nix development markers, pins, activation, CI/editor entry
    points, package-output constraints, and language-local managers. If active
-   mise markers also exist, stop and invoke `project-toolchain-selection`.
-2. Continue the existing Nix layout. For a new project, require confirmed Nix
-   selection before initialization.
+   mise markers also exist, hand off to `project-toolchain-selection`.
+2. Continue the existing Nix layout. For a new project, check that the
+   selection record approves Nix before initialization.
 3. Add or update exact development tool pins in the devShell and shared
    development environment only. For the repository's zero-inputs convention,
    read [references/nix-files.md](references/nix-files.md).
 4. Activate with `nix develop`, direnv/nix-direnv, or the repository's existing
    wrapper. Keep editor and GHCP execution inside the same environment.
-5. On Windows, continue through WSL, a Dev Container, or wslc. Never export
-   `/nix/store` into Win32 `PATH`, and never infer migration from host OS. If
-   the project has selected a wslc bridge, hand its execution to
-   `nix-wslc-devshell`.
-6. Validate exact versions, executable locations, environment variables, and
-   a minimal command. Run existing repository tasks as validation only.
+5. On Windows, continue through WSL, a Dev Container, or wslc. If the
+   project has selected a wslc bridge, hand off to `nix-wslc-devshell` for
+   execution.
+6. Run existing repository tasks as validation only.
 
 Language-local managers and lockfiles remain valid. The devShell may provide
 their launcher or runtime without absorbing their dependency graph; read
 [references/language-notes.md](references/language-notes.md) when that boundary
 is relevant.
 
-Use `nix-github-rate-limit` for GitHub-backed fetches,
+Package output definitions belong to `nix-package-outputs`. Use
+`nix-github-rate-limit` for GitHub-backed fetches,
 `nix-direnv-gc-roots` for stale activation roots, `missing-tools` for one-shot
 execution, and `nix-user-tools` only for explicit user-wide Nix requests.
+
+## Invariants
+
+- Authoritative Nix package outputs keep this Nix development toolchain, and
+  never a mise toolchain plus package-output-only flake, because the outputs
+  depend on the Nix build environment.
+- No `/nix/store` path in Win32 `PATH`, because native Windows tools would
+  resolve Linux binaries.
+- Host OS is not a migration request, because Windows reaches Nix through
+  WSL, a Dev Container, or wslc.
+
+## Done when
+
+- The devShell pins each requested tool to an exact source.
+- Inside the activated environment, each tool reports that version from the
+  expected location, with the expected environment variables set.
+- A minimal command runs in the shell, editor, and GHCP environment.
