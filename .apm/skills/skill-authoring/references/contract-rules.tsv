@@ -9,7 +9,7 @@ C07	require-heading	skill	fail	^## Done when$	-	missing ## Done when
 C08	forbid	body	fail	^## (Avoid|Prohibitions|Hard (boundaries|constraints?)|History Safety)$	-	prohibition heading; use ## Invariants
 C09	section-each	skill	warn	\bbecause\b	## Invariants	invariant without a reason (because ...)
 C10	max-count	skill	warn	\b[Aa]sk the user\b	2	more than two Ask gates
-C11	forbid	body	fail	([Ww]hen in doubt|[Ii]f unclear|[Aa]sk when .*unclear|^\| *Unclear *\| *[Aa]sk)	-	ambiguity gate; state a default and report it
+C11	forbid	body	fail	([Ww]hen in doubt|[Ii]f unclear|[Aa]sk when .*unclear|[Aa]sk before (deciding|proceeding)|^\| *Unclear *\| *[Aa]sk)	-	ambiguity gate; state a default and report it
 C12	forbid	desc	fail	(\b[Ee]ven (if|when|without)\b|[Pp]roactive|auto-invoke|\bONLY\b|do NOT)	-	pressure language in description
 C13	handoff	body	fail	[Hh]and off to `[a-z0-9-]+`	-	handoff target is not a skill in this collection
 C14	exclude-path	-	-	^adr/references/(madr-template|0000-)	-	vendored upstream text

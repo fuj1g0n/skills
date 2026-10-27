@@ -30,7 +30,8 @@ report any tool that has no exact mise source instead of substituting it.
 
 Validate clean installation, lock resolution, shell/IDE/GHCP visibility,
 tool versions, environment variables, and existing build/lint/test commands.
-On Windows, check that no `/nix/store` path enters Win32 `PATH`.
+On Windows, check that no `/nix/store` path enters Win32 `PATH`. Report any
+platform you could not validate as unvalidated, not as passed.
 
 ## 4. Cutover approval
 
@@ -42,7 +43,9 @@ preparation in steps 1-3, not the cutover.
 ## 5. Cut over
 
 Remove every Nix development marker and development-only integration in the
-same transaction that makes mise authoritative. Remove a root flake only when
+same transaction that makes mise authoritative. In `.envrc`, replace
+`use flake` with mise activation when the project keeps direnv; otherwise
+remove the line. Remove a root flake only when
 it has no package, release, or other retained Nix ownership.
 
 ## 6. Clean authority

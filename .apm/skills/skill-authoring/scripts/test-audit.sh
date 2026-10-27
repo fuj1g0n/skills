@@ -98,6 +98,8 @@ make_skill c11t s $'| Situation | Scope |\n|---|---|\n| Unclear | ask the user |
 make_skill c11d s $'| Situation | Scope |\n|---|---|\n| Unclear | user scope; report it |'
 expect C11 c11p present
 expect C11 c11n absent
+make_skill c11b s "Show the path and ask before deciding."
+expect C11 c11b present
 expect C11 c11t present
 expect C11 c11d absent
 

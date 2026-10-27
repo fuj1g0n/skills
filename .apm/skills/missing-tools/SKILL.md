@@ -33,7 +33,8 @@ mise exec -- <command>
 ```
 
 If the tool is not already provisioned, use an exact ephemeral version from a
-trusted source compatible with the current authority. Nix projects may use an
+trusted source compatible with the current authority, normally the newest
+release the backend lists. Nix projects may use an
 exact pinned flake/package reference; mise projects may use exact
 `mise exec <tool>@<version> -- ...` resolution under their backend policy.
 Do not add or edit project manifests for a one-shot request.
@@ -46,7 +47,8 @@ manifest change under the `mise-project-toolchain` supply-chain policy.
 ## Invariants
 
 - No global install or user configuration change, because one-shot recovery
-  leaves no state for later sessions to inherit.
+  leaves no state for later sessions to inherit. A download cache from an
+  exact ephemeral run is not activated anywhere and is allowed.
 - No project manifest, lockfile, task recipe, or package-output change,
   because persistent changes belong to the toolchain owners.
 - No toolchain migration or Nix/mise normalization, because migration is

@@ -14,7 +14,8 @@ manifest, or when active build/release automation consumes it. Exclude:
 - documentation, accepted ADRs, research snapshots, and quoted snippets;
 - disabled or archival CI files.
 
-When scope is uncertain, show the candidate path and ask before deciding.
+When scope is uncertain, count the path as active and name it with its
+classification in the report; a missed marker is costlier than an extra one.
 
 ## Nix development markers
 

@@ -81,10 +81,10 @@ that the decision falls below the bar. A rejected option is worth an ADR
 In order: an existing ADR collection (`NNNN-*.md` under `docs/adr/`,
 `docs/decisions/`, `doc/adr/`, `docs/architecture/decisions/`, `adr/`); a
 `.adr-dir` file at the repo root naming the directory; otherwise this is a
-fresh log — default to `docs/adr/`. Peek at one existing ADR before writing:
-if the log follows a different template (e.g. Nygard, no frontmatter), match
-the log's own format and tell the user — a log in two formats is worse than
-either. Offer MADR migration only if the user asks.
+fresh log — default to `docs/adr/`. Check the format in the neighbors read
+in step 2: if the log follows a different template (e.g. Nygard, no
+frontmatter), match the log's own format and tell the user — a log in two
+formats is worse than either. Offer MADR migration only if the user asks.
 
 ### 2. Read the neighbors
 
@@ -96,7 +96,7 @@ for the next number, exact titles for link text, and the house tone.
 An honest ADR needs: **the problem** (why decide now), **the options**
 seriously considered, **the outcome and its justification**, and **the
 trade-offs**. Take what the conversation and repository establish. If any
-are still missing, write the draft with each gap marked `TODO(user):`, then
+are still missing, write the draft file with each gap marked `TODO(user):`, then
 Ask the user to fill the gaps, presenting the draft and 2–4 targeted
 questions. A decision with zero downsides is a gap: ask for the accepted
 trade-off rather than writing a sales pitch.
