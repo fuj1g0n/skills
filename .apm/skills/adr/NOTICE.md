@@ -9,4 +9,4 @@
   [github/awesome-copilot](https://github.com/github/awesome-copilot)
   `create-architectural-decision-record` (MIT); trigger-calibration ideas
   from tclem/dotfiles `adr-author` (concepts only, no text copied).
-- Research-material tiering per this repository's ADR-0006.
+- Research-material tiering is original to this skill.

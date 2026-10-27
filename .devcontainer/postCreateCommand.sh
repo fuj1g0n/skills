@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Install upstream Nix in single-user mode (store owned by the container
-# user, no daemon, no build users; ADR-0012) and set up direnv + nix-direnv
+# user, no daemon, no build users) and set up direnv + nix-direnv
 # so the flake devShell loads automatically.
 set -euo pipefail
 
-# Constraint (ADR-0011): the container user is fixed to vscode (UID 1000).
+# Constraint: the container user is fixed to vscode (UID 1000).
 # The Nix store is owned by this user; a different user or a rewritten UID
 # (updateRemoteUserUID on a host whose UID is not 1000) would break the
 # single-user store, so fail fast instead of breaking implicitly.
 if [ "$(id -un)" != "vscode" ] || [ "$(id -u)" != "1000" ]; then
   echo "ERROR: this devcontainer requires user vscode with UID 1000 (got $(id -un)/$(id -u))." >&2
-  echo "Your host user's UID is probably not 1000; see docs/adr/0011-fix-devcontainer-user-to-vscode-uid-1000.md." >&2
+  echo "Your host user's UID is probably not 1000; the single-user Nix store is owned by vscode (UID 1000), so keep updateRemoteUserUID from rewriting it." >&2
   exit 1
 fi
 
@@ -28,7 +28,7 @@ NIX_INSTALLER_SHA256=078e2ffeddf6a9c1f22adf41458ccc46a58bb26911a9e01579645314f99
 # Nix IDE extension, direnv + nix-direnv for devShell activation) are
 # supplied by the devcontainer itself from this pinned nixpkgs, NOT from the
 # project flake: the devcontainer must stay usable in repositories whose
-# flakes do not export these packages (ADR-0013).
+# flakes do not export these packages.
 NIXPKGS_REV=421eebfd0ec7bccd4abe826ce62d7e6e83129493
 NIXPKGS_FLAKE="github:NixOS/nixpkgs/${NIXPKGS_REV}"
 
@@ -83,7 +83,7 @@ fi
 # User-level Nix configuration ($HOME is ephemeral, so written idempotently).
 # - flakes are still experimental in upstream Nix;
 # - Nix sandboxing needs root or unprivileged user namespaces; the container
-#   itself provides the isolation (ADR-0010).
+#   itself provides the isolation.
 mkdir -p ~/.config/nix
 cat > ~/.config/nix/nix.conf <<'NIXCONF'
 experimental-features = nix-command flakes
@@ -101,7 +101,7 @@ if ! grep -q "nix.sh" ~/.bashrc; then
   echo '[ -e ~/.nix-profile/etc/profile.d/nix.sh ] && . ~/.nix-profile/etc/profile.d/nix.sh' >> ~/.bashrc
 fi
 
-# Install user-wide tools from the devcontainer-pinned nixpkgs (ADR-0013),
+# Install user-wide tools from the devcontainer-pinned nixpkgs,
 # each individually guarded so a partial previous state is repaired instead
 # of skipped (nix profile add errors on packages that are already
 # installed). On volume reuse the manifest rebuild above already provides

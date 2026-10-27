@@ -2,14 +2,13 @@
 
 Home for everything involved in developing agent skills that reproduce
 @fuj1g0n's development environment and process: the research
-([docs/research/](docs/research/)), the decisions ([docs/adr/](docs/adr/)),
-and the resulting skills (`.apm/skills/`), which are the deliverables.
+([docs/research/](docs/research/)) and the resulting skills
+(`.apm/skills/`), which are the deliverables.
 Skills are deployed user-wide via
 [Microsoft APM](https://github.com/microsoft/apm) to `~/.agents/skills/`.
 
-Not every investigation yields a skill — rejected decisions (e.g. ADR-0008)
-are kept as records; accepted environment decisions are expected to
-eventually materialize as skills.
+Not every investigation yields a skill; research snapshots are kept as
+records either way.
 
 ## Skills
 
@@ -79,5 +78,4 @@ branches do not resolve reliably.
 
 ## Documentation
 
-[docs/](docs/index.md) is an Open Knowledge Format (OKF) v0.2 bundle (see
-ADR-0017).
+[docs/](docs/index.md) is an Open Knowledge Format (OKF) v0.2 bundle.

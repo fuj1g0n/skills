@@ -42,7 +42,7 @@ old_pattern='nix-for''-dev|nix-''manager|nix-gc-''direnv'
 while IFS= read -r -d '' file; do
   relative="${file#"$root/"}"
   case "$relative" in
-    .git/* | docs/adr/* | docs/research/* | \
+    .git/* | docs/research/* | \
       .apm/skills/project-toolchain-selection/references/routing-tests.md) continue ;;
   esac
   if grep -InE "$old_pattern" "$file" >/dev/null 2>&1; then
