@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# E2E test for the nix-devshell Feature (ADR-0015 Confirmation 1-3).
+# E2E test for the nix-devshell Feature.
 # Simulates a consuming repository: a fixture workspace whose
 # devcontainer.json references only a base image and the Feature, brought
 # up with the devcontainer CLI. Run from the repository root.

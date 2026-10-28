@@ -85,7 +85,7 @@ an executor will "reinterpret" the body to match the description
 When a change touches an Ask, an invariant, a `## Done when` bullet, or a
 description, run the cross-model evaluation in
 [references/testing-skills.md](references/testing-skills.md). Other edits
-need only `just audit`.
+need only `mise run audit`.
 
 ## Auditing the collection
 
@@ -93,14 +93,14 @@ Periodically, or after several skills changed, audit the whole collection:
 
 ```
 Skill audit:
-- [ ] 1. Run `just audit` for the mechanical pass
+- [ ] 1. Run `mise run audit` for the mechanical pass
 - [ ] 2. Audit flagged skills against references/audit-checks.md
 - [ ] 3. Cross-skill duplication pass (link or merge)
 - [ ] 4. Documentation & repo-file references pass
-- [ ] 5. Fix the findings, then re-run `just audit`
+- [ ] 5. Fix the findings, then re-run `mise run audit`
 ```
 
-`just audit` runs `scripts/test-audit.sh` (fixtures for every contract
+`mise run audit` runs `scripts/test-audit.sh` (fixtures for every contract
 rule), `scripts/audit.sh [SKILLS_DIR]` (default `.apm/skills/` of this
 repository: one row per skill with line count, name/description lengths,
 references/scripts presence, then contract findings), and the
@@ -116,13 +116,13 @@ rg -N '^description:' .apm/skills/*/SKILL.md
 
 ## Release checks
 
-Before committing a skill change, run `just audit` and `apm audit` (hidden
+Before committing a skill change, run `mise run audit` and `apm audit` (hidden
 Unicode, tampered generated files); then release via the
 `skill-management` workflow.
 
 ## Done when
 
-- `just audit` and `apm audit` exit 0.
+- `mise run audit` and `apm audit` exit 0.
 - Every description trigger maps to scope the body covers (Iteration 0).
 - Cross-model evaluation passed when the change required it.
 

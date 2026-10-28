@@ -1,6 +1,6 @@
 ---
 name: project-toolchain-selection
-description: Selects the authoritative project development toolchain. Use when initializing a project, choosing Nix versus mise+Aqua, detecting toolchain ownership, or resolving mixed toolchain markers.
+description: Selects the authoritative project development toolchain. Use when initializing a project, choosing Nix versus mise, changing tools in a Nix devShell project without package outputs, detecting toolchain ownership, or resolving mixed toolchain markers.
 ---
 
 # Project Toolchain Selection
@@ -16,46 +16,51 @@ initialize or mutate either toolchain.
    [references/selection-evidence.md](references/selection-evidence.md) when
    markers are ambiguous or Nix outputs may exist.
 3. Apply this precedence, in order:
-   1. Authoritative Nix package outputs are a hard Nix constraint.
+   1. Authoritative Nix package outputs are a hard Nix constraint; the owner
+      is `project-nix-distribution`.
    2. Both Nix and mise development markers active: Ask the user which
       explicit recovery plan applies, presenting the evidence for each
       authority. Edit neither system meanwhile.
-   3. An existing Nix development setup continues with Nix.
-   4. An existing mise setup continues with mise+Aqua.
-   5. A new project has no default: Ask the user to approve a toolchain,
-      presenting the evidence, recommendation, and consequences of both.
-4. Report the evidence, recommendation, consequences, and intended owner.
-5. Once the owner is settled, hand off to `nix-project-toolchain` or
-   `mise-project-toolchain`.
+   3. A Nix devShell without package outputs is a migration candidate. For a
+      tool change there, Ask the user to approve migration to mise,
+      presenting the markers and the absent outputs; on approval hand off to
+      `project-toolchain-migration`, otherwise Block: report it and end
+      without changes. Running the existing devShell is not a tool change.
+   4. An existing mise setup continues with mise.
+   5. A new project defaults to mise; see New projects.
+4. If the user explicitly asks to migrate from mise to Nix, Block: no skill
+   owns that migration. Report the request and the current markers and end
+   without changes.
+5. Report the evidence, recommendation, consequences, and intended owner.
+6. Once the owner is settled, hand off to `project-dev-tools` or
+   `project-nix-distribution`.
 
 ## New projects
 
-Infer platform needs from the project's purpose and expected developers,
-agents, editors, and automation. A Linux deployment target alone does not
-make a project Linux-only.
-
-- When development and execution are guaranteed Linux-only, recommend Nix.
-- When Windows may participate natively, including GHCP or other agents,
-  recommend mise+Aqua.
-- Discuss both choices in the new-project Ask; create no manifests before
-  the user approves.
+Select mise by default and name the default in the report. Select Nix only
+when the project will define Nix package outputs (rule 1). A request for a
+Nix devShell without planned outputs would create a migration candidate:
+Block, report that Nix development requires Nix distribution, and end
+without changes. Linux-only development or a Linux deployment target alone
+does not select Nix.
 
 ## Invariants
 
 - Existing intent precedes platform preference, because changing an
-  established toolchain is a migration that only an explicit request
+  established toolchain is a migration that only the user's approval
   authorizes.
 - A project with authoritative Nix `packages`, `apps`, `checks`,
   derivations, Nix-built OCI images, or release outputs uses Nix for
   development too, and never a mise toolchain plus package-output-only
   flake, because those outputs depend on the Nix build environment and two
   development authorities drift.
-- Aqua is a mise backend, never an independent project toolchain, because a
-  second manifest splits tool ownership.
-- Migration is explicit-only and belongs to
-  `nix-to-mise-project-toolchain`; Windows use alone is not a migration
-  request, because Nix projects already run on Windows through WSL, a Dev
-  Container, or wslc.
+- The standalone aqua CLI and `aqua.yaml` are never a project toolchain,
+  because mise's `aqua:` backend needs neither and a second manifest splits
+  tool ownership.
+- Migration needs the user's approval and only Nix-to-mise is supported,
+  through `project-toolchain-migration`; Windows use alone is not a
+  migration request, because Nix projects already run on Windows through
+  WSL, a Dev Container, or wslc.
 
 ## Ownership boundaries
 
@@ -64,17 +69,17 @@ make a project Linux-only.
 - Installing `just` or another runner belongs to the selected project
   toolchain. Editing recipes or workflow orchestration is normal repository
   work, not owned by either toolchain skill.
-- Package output definitions belong to `nix-package-outputs`, but their
-  presence constrains this selection.
-- A selected wslc execution bridge belongs to `nix-wslc-devshell`; it does
-  not own Nix/mise selection or the Nix development manifests.
+- Nix package outputs and their devShell belong to
+  `project-nix-distribution`; their presence constrains this selection.
+- A selected wslc execution bridge belongs to `windows-wslc-project-shell`;
+  it does not own Nix/mise selection or the Nix development manifests.
 
 ## Done when
 
 - The report names the evidence, the selected toolchain, and the owning
   skill.
-- For a new project or mixed markers, the user approved the toolchain
-  before any manifest changed.
+- For mixed markers or a migration candidate, the user approved the plan
+  before any manifest changed, or the request was blocked.
 - Control is handed to the owning skill.
 
 For the routing corpus, RED/GREEN pressure cases, and blank-slate executor

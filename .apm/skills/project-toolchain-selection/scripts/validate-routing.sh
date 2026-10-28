@@ -9,28 +9,37 @@ corpus="$skill_dir/references/routing-cases.tsv"
 expected_routes=(
   new-linux-only:project-toolchain-selection
   new-windows-participant:project-toolchain-selection
-  existing-nix:nix-project-toolchain
-  existing-mise:mise-project-toolchain
+  new-nix-outputs:project-toolchain-selection
+  new-nix-devshell-only:project-toolchain-selection
+  existing-nix:project-nix-distribution
+  nix-devshell-only:project-toolchain-selection
+  existing-mise:project-dev-tools
   nix-package-hard-constraint:project-toolchain-selection
   mixed-markers:project-toolchain-selection
-  windows-opens-nix:nix-project-toolchain
-  windows-wslc-bridge:nix-wslc-devshell
-  migration-with-packages:nix-to-mise-project-toolchain
-  authorized-full-migration:nix-to-mise-project-toolchain
-  pin-just-mise:mise-project-toolchain
-  pin-just-nix:nix-project-toolchain
+  windows-opens-nix:project-nix-distribution
+  windows-wslc-bridge:windows-wslc-project-shell
+  migration-with-packages:project-toolchain-migration
+  authorized-full-migration:project-toolchain-migration
+  mise-to-nix-migration:project-toolchain-selection
+  pin-just-mise:project-dev-tools
+  pin-just-nix:project-nix-distribution
   edit-just-recipe:repository-work
-  add-flake-package:nix-package-outputs
-  global-nix:nix-user-tools
-  global-mise:mise-user-tools
+  add-flake-package:project-nix-distribution
+  global-nix:linux-user-tools
+  global-self-upgrading-binary:linux-user-tools
+  global-windows-native:windows-user-tools
+  windows-self-upgrading:windows-user-tools
+  windows-other-manager:windows-user-tools
+  windows-machine-only:windows-user-tools
+  global-without-nix:linux-user-tools
   missing-one-shot:missing-tools
-  npm-age-gate:mise-project-toolchain
+  npm-age-gate:project-dev-tools
   pressure-accidental-migration:project-toolchain-selection
   pressure-global-mutation:missing-tools
-  pressure-persistent-coexistence:nix-to-mise-project-toolchain
-  pressure-package-absorption:nix-package-outputs
-  pressure-npm-bypass:mise-project-toolchain
-  pressure-win32-path:nix-project-toolchain
+  pressure-persistent-coexistence:project-toolchain-migration
+  pressure-package-absorption:project-nix-distribution
+  pressure-npm-bypass:project-dev-tools
+  pressure-win32-path:project-nix-distribution
 )
 
 [[ -f $corpus ]] || {

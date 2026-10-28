@@ -1,0 +1,19 @@
+[tools]
+node = "24.22.1"
+"npm:markdownlint-cli2" = "0.24.0"
+
+[env]
+# Optional, untracked local overrides; mise skips a missing file.
+_.file = ".env.local"
+
+[tasks.lint]
+description = "Lint Markdown files"
+run = 'markdownlint-cli2 "**/*.md"'
+
+[tasks.audit]
+description = "Audit skills: contract rules and their fixtures, then routing corpus"
+run = [
+  ".apm/skills/skill-authoring/scripts/test-audit.sh",
+  ".apm/skills/skill-authoring/scripts/audit.sh",
+  ".apm/skills/project-toolchain-selection/scripts/validate-taxonomy.sh",
+]

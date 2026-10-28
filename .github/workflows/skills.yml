@@ -5,25 +5,41 @@ on:
   pull_request:
     paths:
       - ".apm/skills/**"
+      - "**/*.md"
+      - ".markdownlint-cli2.yaml"
+      - "mise.toml"
+      - "mise.lock"
+      - ".mise/**"
       - ".github/workflows/skills.yml"
   push:
     branches:
       - main
     paths:
       - ".apm/skills/**"
+      - "**/*.md"
+      - ".markdownlint-cli2.yaml"
+      - "mise.toml"
+      - "mise.lock"
+      - ".mise/**"
       - ".github/workflows/skills.yml"
 
+env:
+  # Install only what mise.lock records, with its URLs, checksums, and
+  # npm dependency graphs.
+  MISE_LOCKED: "1"
+
 jobs:
-  audit:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Audit fixtures
-        run: .apm/skills/skill-authoring/scripts/test-audit.sh
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          version: "2026.10.3"
 
       - name: Audit skills
-        run: .apm/skills/skill-authoring/scripts/audit.sh
+        run: mise run audit
 
-      - name: Routing corpus and taxonomy
-        run: .apm/skills/project-toolchain-selection/scripts/validate-taxonomy.sh
+      - name: Lint Markdown
+        run: mise run lint

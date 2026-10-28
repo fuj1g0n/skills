@@ -3,7 +3,6 @@ name: devcontainer Features
 # E2E-test the Feature with the devcontainer CLI against a fixture
 # consuming workspace: the local source on PRs and on main (gating
 # publish), then the published GHCR artifact after publish on main.
-# See ADR-0015.
 on:
   workflow_dispatch:
   pull_request:
