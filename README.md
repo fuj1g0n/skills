@@ -105,6 +105,11 @@ for measured compatibility limits before selecting additional targets.
 
 ## Development
 
+The proposed [instruction scopes](docs/design/skill-instruction-scopes.md)
+separate reusable adopter workflows from this repository's maintenance
+procedures and consumer-specific configuration. The proposal is not yet
+implemented in the distributed skills.
+
 Development tools and tasks are defined in `mise.toml` and pinned in
 `mise.lock`, including the npm dependency graph under `.mise/locks/`.
 
