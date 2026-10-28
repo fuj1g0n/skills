@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - ".apm/skills/**"
+      - "plugin.json"
+      - "skills/**"
       - "**/*.md"
       - ".markdownlint-cli2.yaml"
       - "mise.toml"
@@ -15,7 +16,8 @@ on:
     branches:
       - main
     paths:
-      - ".apm/skills/**"
+      - "plugin.json"
+      - "skills/**"
       - "**/*.md"
       - ".markdownlint-cli2.yaml"
       - "mise.toml"

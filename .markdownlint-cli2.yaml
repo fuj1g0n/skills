@@ -3,4 +3,4 @@ config:
   MD060: false
 ignores:
   - docs/research/**
-  - .apm/skills/**
+  - skills/**

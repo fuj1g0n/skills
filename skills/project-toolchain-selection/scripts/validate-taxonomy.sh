@@ -2,8 +2,8 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-root="$(cd "$script_dir/../../../.." && pwd)"
-skills_dir="$root/.apm/skills"
+root="$(cd "$script_dir/../../.." && pwd)"
+skills_dir="$root/skills"
 failed=0
 
 required_skills=(
@@ -46,7 +46,7 @@ while IFS= read -r -d '' file; do
   relative="${file#"$root/"}"
   case "$relative" in
     .git/* | docs/research/* | \
-      .apm/skills/project-toolchain-selection/references/routing-tests.md) continue ;;
+      skills/project-toolchain-selection/references/routing-tests.md) continue ;;
   esac
   if grep -InE "$old_pattern" "$file" >/dev/null 2>&1; then
     echo "Old active skill name in $relative" >&2

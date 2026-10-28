@@ -8,7 +8,7 @@
 # Adapted from ryoppippi/dotfiles skill-maintenance/scripts/audit.sh (MIT).
 #
 # Usage: scripts/audit.sh [SKILLS_DIR]
-#   SKILLS_DIR defaults to the .apm/skills directory this script lives under.
+#   SKILLS_DIR defaults to the skills directory this script lives under.
 # Exit status: 1 when any hard ("!") flag or fail-level contract finding
 # exists; warnings never fail.
 set -euo pipefail
@@ -21,7 +21,7 @@ readonly NAME_MAX=64   # frontmatter name hard limit
 readonly DESC_MAX=1024 # frontmatter description hard limit
 readonly DESC_SOFT=350 # keep descriptions tight (~20-35 words); flag above this
 
-# Default to .apm/skills (two levels up from this scripts/ directory).
+# Default to skills (two levels up from this scripts/ directory).
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 skills_dir="${1:-$(cd "$script_dir/../.." && pwd)}"
 rules_file="$script_dir/../references/contract-rules.tsv"

@@ -61,8 +61,8 @@ of skills that touch the same topic, pick the lightest fix (see SKILL.md
 Find candidates:
 
 ```bash
-rg -N '^description:' .apm/skills/*/SKILL.md   # overlapping triggers
-rg -l '<topic or command>' .apm/skills          # same topic across skills
+rg -N '^description:' skills/*/SKILL.md   # overlapping triggers
+rg -l '<topic or command>' skills          # same topic across skills
 ```
 
 Report each overlap as: the two skills, link or merge, and which one keeps

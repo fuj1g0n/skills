@@ -23,8 +23,8 @@ not preserve the old skill text as a compatibility stub.
 Run the deterministic corpus check:
 
 ```bash
-.apm/skills/project-toolchain-selection/scripts/validate-routing.sh
-.apm/skills/project-toolchain-selection/scripts/validate-taxonomy.sh
+skills/project-toolchain-selection/scripts/validate-routing.sh
+skills/project-toolchain-selection/scripts/validate-taxonomy.sh
 ```
 
 Then dispatch every row to a fresh blank-slate executor with only the skill

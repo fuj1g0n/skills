@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "skills",
+  "version": "2.0.0",
+  "description": "Agent skills reproducing fuj1g0n's dev environment and process, plus the ADRs and research behind them",
+  "author": {
+    "name": "fuj1g0n"
+  },
+  "repository": "https://github.com/fuj1g0n/skills"
+}

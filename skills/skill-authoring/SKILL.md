@@ -7,7 +7,7 @@ description: Guides authoring, editing, and auditing agent skills (SKILL.md). Us
 
 Quality rules for writing skills and keeping the collection healthy. This
 skill owns *how to write* a skill; the `skill-management` skill owns *how to
-deploy* one (APM manifest, pinning, install) — follow it for every release.
+deploy* one (plugin marketplace, pinning, install) — follow it for every release.
 
 ## When a new skill is warranted
 
@@ -101,7 +101,7 @@ Skill audit:
 ```
 
 `mise run audit` runs `scripts/test-audit.sh` (fixtures for every contract
-rule), `scripts/audit.sh [SKILLS_DIR]` (default `.apm/skills/` of this
+rule), `scripts/audit.sh [SKILLS_DIR]` (default `skills/` of this
 repository: one row per skill with line count, name/description lengths,
 references/scripts presence, then contract findings), and the
 `project-toolchain-selection` routing validators. The audit exits 1 on any
@@ -111,18 +111,17 @@ fail. The judgement checks live in
 candidates with:
 
 ```bash
-rg -N '^description:' .apm/skills/*/SKILL.md
+rg -N '^description:' skills/*/SKILL.md
 ```
 
 ## Release checks
 
-Before committing a skill change, run `mise run audit` and `apm audit` (hidden
-Unicode, tampered generated files); then release via the
+Before committing a skill change, run `mise run audit`; then release via the
 `skill-management` workflow.
 
 ## Done when
 
-- `mise run audit` and `apm audit` exit 0.
+- `mise run audit` exits 0.
 - Every description trigger maps to scope the body covers (Iteration 0).
 - Cross-model evaluation passed when the change required it.
 
