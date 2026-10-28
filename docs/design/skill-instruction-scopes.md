@@ -50,7 +50,7 @@ the defect. Instructions that make those repositories prerequisites are.
 | Any adopter writing a skill | `skills/skill-authoring/SKILL.md` and its bundled resources | Skill structure, descriptions, authoring quality, task-scoped validation, and behavior-test method. |
 | Any adopter publishing a package | `skills/skill-management/SKILL.md` | Package inspection, distribution format, component layout, compatibility, and the requested publication workflow. |
 | Any adopter installing or removing a package | `skills/skill-management/SKILL.md` | Consumer scope, actual manifest source, revision selection, explicit targets, ownership transfer, and component verification. |
-| Contributors changing this collection | Root `AGENTS.md`, to be added | Repository-specific checks, portability requirements, and contributor completion conditions. This file is not a distributed skill. |
+| Contributors changing this collection | Root [AGENTS.md](../../AGENTS.md) | Repository-specific checks, portability requirements, and contributor completion conditions. This file is not a distributed skill. |
 | Maintainers releasing `fuj1g0n/skills` | This repository's README development and release guidance | `plugin.json`, this collection's checks, evaluation profile, versioning, and publication procedure. |
 | Users installing this particular package | This repository's README install guidance | Package identity, supported or tested installation paths, and known package-specific limits. |
 | Maintainers of `fuj1g0n/.dotfiles` | That repository's README, design document, manifests, and marketplace | Actual pins, selected tools, symlink sources, lockfile policy, migration, and reproduced local compatibility exceptions. |
@@ -161,9 +161,10 @@ reported as unavailable, not replaced with a claimed cross-model pass.
 
 ## Rollout and limits
 
-First add repository-scoped contributor and release instructions. Then
-rewrite both shared skills and their affected references as one coherent
-change. Keep stable skill identifiers and reusable validation assets.
+Repository-scoped `AGENTS.md` files now exist in both repositories.
+The remaining implementation is to separate release guidance and rewrite
+both shared skills and their affected references as one coherent change.
+Keep stable skill identifiers and reusable validation assets.
 Run the acceptance scenarios and repository checks before release.
 
 Producer publication and consumer adoption remain separate. Update the
