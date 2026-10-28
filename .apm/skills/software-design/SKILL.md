@@ -3,7 +3,9 @@ name: software-design
 description: >
   Develops software designs and maintains design documents and decision records.
   Use when explicitly designing a system or change, comparing architectural
-  options, writing a design doc or ADR, or revising a recorded decision.
+  options, writing a design doc or ADR, recording why a choice was made
+  ("we decided X over Y"), starting a decision log, or revising,
+  superseding, or amending a recorded decision.
 ---
 
 # Software Design
@@ -22,8 +24,8 @@ to establish intent. Distinguish facts, proposed options, and unknowns.
 
 When another workflow already owns design or execution, consume its current
 artifact rather than restarting analysis or introducing another checkpoint.
-For Ponytail modes and pstack's architect, how, interrogate, and decision
-trail, read [references/workflow-integration.md](references/workflow-integration.md).
+For Ponytail levels and pstack's architect, how, interrogate, sharpen, and
+decision trail, read [references/workflow-integration.md](references/workflow-integration.md).
 Those plugins are optional; their absence does not block standalone work.
 
 Classify the request:
@@ -79,8 +81,11 @@ with its consequence and next check.
 Ask the user to decide a material unresolved product or architectural
 choice, presenting the current artifact, alternatives, trade-offs, and a
 recommendation, before treating it as settled or implementing that choice.
-An explicit choice or approval already given satisfies this gate. Drafting,
-read-only investigation, and work independent of that choice can proceed.
+An explicit choice or approval already given satisfies this gate. So does
+a choice made by an active workflow whose contract proceeds without a
+human checkpoint, such as default pstack architect; its own open questions
+stay open. Drafting, read-only investigation, and work independent of that
+choice can proceed.
 
 ## 4. Write or update the selected artifact
 

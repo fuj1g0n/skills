@@ -24,6 +24,9 @@ Fresh MADR records use a short title, `status` and ISO date frontmatter,
 were considered, `Decision Outcome`, and consequences when known.
 Include decision-makers only when established. Omit unused template
 sections rather than filling them with generic prose.
+Keep MADR scaffolding (frontmatter keys, status values, and section
+headings) in canonical English, because ADR tooling such as Backstage and
+Structurizr parses it; write the prose in the log's or instructed language.
 
 In an OKF bundle, add `type: Architecture Decision Record` without replacing
 MADR status metadata; `documentation` owns the bundle conventions.

@@ -25,6 +25,8 @@ as unresolved rather than declaring the document accepted.
 
 Preserve its existing checkpoint choice: default architect execution has
 no added human checkpoint, while an explicit checkpoint request is honored.
+Its synthesized choice satisfies the main skill's decision gate; carry its
+open questions forward without asking the user to approve the choice again.
 Do not restart how, arena, or interrogate to populate a template or request
 approval again for a settled choice. Missing analysis returns to the
 active owner; do not silently substitute a competing design.
@@ -38,7 +40,8 @@ copies of the same living plan.
 
 Preserve the selected level; this skill does not raise/lower it. Lite
 keeps the requested build and identifies a smaller alternative briefly;
-ultra can challenge unjustified scope. A document request does not opt
+full (the default) applies the smallest complete change and names what was
+skipped; ultra can challenge unjustified scope. A document request does not opt
 into ultra or add a premise-attack ceremony.
 
 Prefer the first sufficient design and existing layers/patterns. Record

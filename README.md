@@ -54,9 +54,10 @@ approval. Ponytail's active level continues to constrain scope and
 simplicity. See the [integration adapter](.apm/skills/software-design/references/workflow-integration.md)
 for boundaries, including optional execution decision trails.
 
-After a release, whole-package installations obtain the replacement through
-their normal APM update. A single-skill dependency on `.apm/skills/adr`
-needs its path changed to `.apm/skills/software-design` at the new pin.
+Whole-package installations obtain the replacement when they update their
+pin to a commit that includes it. A single-skill dependency on
+`.apm/skills/adr` needs its path changed to `.apm/skills/software-design`
+at that pin.
 
 ## Install
 
