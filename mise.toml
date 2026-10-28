@@ -13,7 +13,7 @@ run = 'markdownlint-cli2 "**/*.md"'
 [tasks.audit]
 description = "Audit skills: contract rules and their fixtures, then routing corpus"
 run = [
-  ".apm/skills/skill-authoring/scripts/test-audit.sh",
-  ".apm/skills/skill-authoring/scripts/audit.sh",
-  ".apm/skills/project-toolchain-selection/scripts/validate-taxonomy.sh",
+  "skills/skill-authoring/scripts/test-audit.sh",
+  "skills/skill-authoring/scripts/audit.sh",
+  "skills/project-toolchain-selection/scripts/validate-taxonomy.sh",
 ]
