@@ -13,7 +13,7 @@ Solutions:
 
 - Run `nix-collect-garbage -d` to remove old generations
 - Run `nix store optimise` to deduplicate files
-- Clean stale `.direnv` GC roots first (see `nix-direnv-gc-roots`)
+- Clean stale `.direnv` GC roots first (see `project-env-cache-cleanup`)
 - Check network connectivity (binary cache downloads); on this WSL2/GSA
   network a hang is usually DNS, not Nix
 
@@ -29,7 +29,7 @@ Error: `error: attribute 'package-name' missing`
 ## GitHub Rate Limits
 
 `HTTP error 403` from `api.github.com` during fetches: apply the
-`nix-github-rate-limit` skill.
+`github-fetch-rate-limit` skill.
 
 ## Profile Issues
 

@@ -1,9 +1,9 @@
 ---
-name: nix-github-rate-limit
+name: github-fetch-rate-limit
 description: Prevents and handles GitHub API rate limits when Nix fetches GitHub-backed inputs. Use when Nix, flakes, nixpkgs commands, or comma may fetch GitHub-backed inputs.
 ---
 
-# Nix GitHub Rate Limit
+# GitHub Fetch Rate Limit
 
 Use this skill before running Nix commands that may fetch GitHub-backed flakes
 or packages, especially `nix flake update`, `nix run github:...`,

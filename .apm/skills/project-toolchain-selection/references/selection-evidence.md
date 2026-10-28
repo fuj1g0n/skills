@@ -44,8 +44,9 @@ example as an output. `devShells` alone is not a package-output marker.
 Conversely, an output imported from another Nix file still counts even when
 the words `packages` or `checks` do not appear in the root flake.
 
-When package outputs exist, select Nix and hand output edits to
-`nix-package-outputs`. Migration to mise is blocked until a separately
+When package outputs exist, select Nix and hand the outputs and the devShell
+to `project-nix-distribution`. Without them, a Nix devShell is a migration
+candidate. Migration to mise is blocked until a separately
 authorized plan removes or replaces every authoritative package output.
 
 ## mise development markers
@@ -70,7 +71,7 @@ Project state: new | existing
 Authoritative markers: <paths and meanings>
 Ignored candidates: <paths and reason>
 Package-output constraint: present | absent | uncertain
-Recommendation: Nix | mise | blocked | clarify
+Recommendation: Nix | mise | migrate | blocked | clarify
 Confirmation required: yes | no
 Primary owner after selection: <skill name>
 ```

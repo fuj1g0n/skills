@@ -14,8 +14,6 @@ location and active consumers, not through text occurrence alone.
 
 ## Excluded surfaces
 
-- `devShells`, `mkShell`, `.envrc`, shell activation, and development tools
-  belong to `nix-project-toolchain`.
 - `justfile`, mise `[tasks]`, CI workflow orchestration, and release recipes
   remain normal repository task or workflow work.
 - Language package manifests and locks remain owned by their language
@@ -26,9 +24,10 @@ location and active consumers, not through text occurrence alone.
 ## Constraint and handoff
 
 The presence of included outputs is a hard selection constraint: development
-must remain Nix. Output definition is still handled here, while developer
-tool changes are handed to `nix-project-toolchain`.
+must remain Nix, and `project-nix-distribution` owns both the outputs and
+their devShell. A Nix project without included outputs is a migration
+candidate; `project-toolchain-selection` handles its tool changes.
 
 Removing or replacing outputs for a migration is not an incidental cleanup.
 It requires a separately authorized plan before
-`nix-to-mise-project-toolchain` may proceed.
+`project-toolchain-migration` may proceed.

@@ -13,7 +13,7 @@ toolchain.
 
 1. Check that the user explicitly asked for a user-wide change on native
    Windows. Otherwise hand off to `missing-tools` for a one-shot need, to
-   the project toolchain owner, or to `nix-user-tools` for Linux or WSL.
+   the project toolchain owner, or to `linux-user-tools` for Linux or WSL.
 2. If the request names Scoop, Chocolatey, or mise as the user-wide
    manager, Block: no skill owns that channel. Report the supported route
    and end without changes.

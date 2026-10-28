@@ -1,9 +1,9 @@
 ---
-name: mise-project-toolchain
-description: Manages a project's mise tools, including adding, pinning, updating, or removing CLIs and runtimes, and activation or PATH visibility in shells, editors, and agents. Use in existing mise projects or after project-toolchain-selection selects mise.
+name: project-dev-tools
+description: Manages a project's development tools through mise, including adding, pinning, updating, or removing CLIs and runtimes, and activation or PATH visibility in shells, editors, and agents. Use in existing mise projects or after project-toolchain-selection selects mise.
 ---
 
-# mise Project Toolchain
+# Project Dev Tools
 
 Use this skill when mise is already authoritative or
 `project-toolchain-selection` has selected it. Aqua appears only as mise's

@@ -1,9 +1,9 @@
 ---
-name: nix-direnv-gc-roots
-description: Removes stale nix-direnv GC roots. Use when `.direnv` caches retain Nix store paths, disk reclamation is blocked, or the user asks to inspect or delete direnv roots.
+name: project-env-cache-cleanup
+description: Removes stale project environment caches held as nix-direnv GC roots. Use when `.direnv` caches retain Nix store paths, disk reclamation is blocked, or the user asks to inspect or delete direnv roots.
 ---
 
-# Nix direnv GC roots
+# Project Environment Cache Cleanup
 
 Find and remove `.direnv` directories that hold GC roots in the Nix store,
 then reclaim the space. Deleting them is safe: direnv recreates `.direnv` the

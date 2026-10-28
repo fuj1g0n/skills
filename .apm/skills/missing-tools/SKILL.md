@@ -17,9 +17,9 @@ This skill owns one-shot recovery and scope triage, not persistent tool state.
    otherwise, and name the recurring-tool option in the final report so a
    recurring dependency is not hidden behind an ephemeral command.
    - **one-shot**: continue here;
-   - **recurring project tool**: hand off to the authoritative owner,
-     `nix-project-toolchain` or `mise-project-toolchain`;
-   - **explicit user-wide request**: hand off to `nix-user-tools` in Linux
+   - **recurring project tool**: hand off to `project-toolchain-selection`,
+     which names the owner;
+   - **explicit user-wide request**: hand off to `linux-user-tools` in Linux
      or WSL, or to `windows-user-tools` on native Windows.
 
 ## One-shot execution
@@ -42,7 +42,7 @@ Do not add or edit project manifests for a one-shot request.
 For npm tools, use an already committed exact dependency and lockfile after
 `npm ci`. If none exists, Ask the user to approve adding a persistent project
 dependency, presenting the package, an admitted exact version, and the
-manifest change under the `mise-project-toolchain` supply-chain policy.
+manifest change under the `project-dev-tools` supply-chain policy.
 
 ## Invariants
 
@@ -66,5 +66,4 @@ manifest change under the `mise-project-toolchain` supply-chain policy.
   ephemeral version, and its output was reported.
 - `git status` shows no manifest, lockfile, or recipe change.
 
-Use `nix-github-rate-limit` when an approved Nix one-shot may fetch from
-GitHub.
+Use `github-fetch-rate-limit` when a Nix one-shot may fetch from GitHub.

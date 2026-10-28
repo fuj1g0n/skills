@@ -1,13 +1,14 @@
 ---
-name: nix-wslc-devshell
+name: windows-wslc-project-shell
 description: Runs an existing Nix project's devShell in a wslc container while its repository stays on Windows. Use only when wslc is selected for Windows-hosted Nix execution.
 ---
 
-# Nix devShell via wslc
+# Windows wslc Project Shell
 
-This skill owns wslc-specific provisioning and command delegation. It does
-not own the project development toolchain: `nix-project-toolchain` remains
-authoritative for developer tools, pins, activation semantics, and validation.
+This skill owns wslc-specific provisioning and command delegation for an
+existing Nix project opened from Windows. It does not own the project
+development toolchain: `project-nix-distribution` remains authoritative for
+developer tools, pins, activation semantics, and validation.
 
 ## Entry gate
 
@@ -15,7 +16,7 @@ authoritative for developer tools, pins, activation semantics, and validation.
   wslc for Windows-hosted execution.
 - Use `project-toolchain-selection` when authority is unknown or mixed.
 - General Windows continuation through WSL or a Dev Container belongs to
-  `nix-project-toolchain`, not this skill.
+  `project-nix-distribution`, not this skill.
 
 ## Scope contract
 
@@ -48,8 +49,8 @@ Do not own:
    Windows.
 
 Existing task recipes may be run for validation, but this skill does not edit
-them. Hand off to `nix-project-toolchain` for devShell changes and to
-`nix-package-outputs` for package outputs.
+them. Hand off to `project-nix-distribution` for devShell changes and
+package outputs.
 
 ## Invariants
 

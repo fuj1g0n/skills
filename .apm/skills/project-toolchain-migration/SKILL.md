@@ -1,15 +1,17 @@
 ---
-name: nix-to-mise-project-toolchain
-description: Performs explicit full-cutover Nix-to-mise project migrations. Use when the user explicitly asks to migrate a project's development toolchain from Nix to mise.
+name: project-toolchain-migration
+description: Performs full-cutover migrations of a project's development toolchain from Nix to mise. Use when the user explicitly asks to migrate, or approves migrating a Nix devShell project without package outputs.
 ---
 
-# Nix-to-mise Project Toolchain Migration
+# Project Toolchain Migration
 
 Migration is a complete cutover between project development authorities.
+Only Nix-to-mise is supported.
 
 ## Entry gates
 
-- The user's explicit migration request is the precondition. Windows
+- The user's explicit migration request, or approval of the migration
+  `project-toolchain-selection` offered, is the precondition. Windows
   participation alone is not a request; without one, hand off to
   `project-toolchain-selection`.
 - Inspect authoritative Nix package outputs using the marker rules in

@@ -7,10 +7,10 @@ skills_dir="$root/.apm/skills"
 failed=0
 
 required_skills=(
-  project-toolchain-selection missing-tools nix-project-toolchain
-  mise-project-toolchain nix-user-tools windows-user-tools
-  nix-to-mise-project-toolchain nix-package-outputs
-  nix-wslc-devshell nix-direnv-gc-roots nix-github-rate-limit
+  project-toolchain-selection missing-tools project-dev-tools
+  project-nix-distribution project-toolchain-migration
+  linux-user-tools windows-user-tools windows-wslc-project-shell
+  project-env-cache-cleanup github-fetch-rate-limit
 )
 
 for skill in "${required_skills[@]}"; do
@@ -39,6 +39,9 @@ for skill_file in "$skills_dir"/*/SKILL.md; do
 done
 
 old_pattern='nix-for''-dev|nix-''manager|nix-gc-''direnv|mise-user''-tools'
+old_pattern+='|nix-project''-toolchain|mise-project''-toolchain|nix-package''-outputs'
+old_pattern+='|nix-to-mise-project''-toolchain|nix-wslc''-devshell|nix-user''-tools'
+old_pattern+='|nix-github''-rate-limit|nix-direnv-gc''-roots'
 while IFS= read -r -d '' file; do
   relative="${file#"$root/"}"
   case "$relative" in
@@ -60,24 +63,23 @@ if grep -RInE --exclude='routing-tests.md' --exclude='validate-taxonomy.sh' \
   'npx -y|@[Ll]atest|--registry([=[:space:]]|$)|registry\.npmjs\.org' \
   "$skills_dir/project-toolchain-selection" \
   "$skills_dir/missing-tools" \
-  "$skills_dir/mise-project-toolchain" \
-  "$skills_dir/nix-project-toolchain" \
-  "$skills_dir/nix-to-mise-project-toolchain" \
-  "$skills_dir/nix-package-outputs" >/dev/null; then
+  "$skills_dir/project-dev-tools" \
+  "$skills_dir/project-nix-distribution" \
+  "$skills_dir/project-toolchain-migration" >/dev/null; then
   echo "Floating or registry-bypass command found in active toolchain guidance" >&2
   failed=1
 fi
 
 if grep -RInE '^\[tasks\][[:space:]]*$' \
-  "$skills_dir/mise-project-toolchain" \
-  "$skills_dir/nix-project-toolchain" >/dev/null; then
+  "$skills_dir/project-dev-tools" \
+  "$skills_dir/project-nix-distribution" >/dev/null; then
   echo "Toolchain skill defines task recipes" >&2
   failed=1
 fi
 
 if grep -RInE 'callPackage|mkDerivation|dockerTools\.|build(GoModule|RustPackage|NpmPackage)' \
-  "$skills_dir/nix-project-toolchain" >/dev/null; then
-  echo "Nix project toolchain contains package-output implementation guidance" >&2
+  "$skills_dir/project-dev-tools" >/dev/null; then
+  echo "mise project tools contain Nix package-output guidance" >&2
   failed=1
 fi
 

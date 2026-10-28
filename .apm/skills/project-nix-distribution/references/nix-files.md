@@ -33,7 +33,7 @@ Commit source pins and activation files.
 If the project already has `packages`, `apps`, `checks`, derivations, or
 Nix-built release outputs, do not rewrite them from this reference. Their
 presence constrains development to Nix, while edits belong to
-`nix-package-outputs`.
+`project-nix-distribution`.
 
 Do not introduce task definitions into the flake. A task runner may be a
 devShell tool, but recipes stay in the repository's existing task surface.
