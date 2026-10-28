@@ -9,6 +9,7 @@ corpus="$skill_dir/references/routing-cases.tsv"
 expected_routes=(
   new-linux-only:project-toolchain-selection
   new-windows-participant:project-toolchain-selection
+  new-nix-outputs:project-toolchain-selection
   existing-nix:nix-project-toolchain
   existing-mise:mise-project-toolchain
   nix-package-hard-constraint:project-toolchain-selection
@@ -17,12 +18,15 @@ expected_routes=(
   windows-wslc-bridge:nix-wslc-devshell
   migration-with-packages:nix-to-mise-project-toolchain
   authorized-full-migration:nix-to-mise-project-toolchain
+  mise-to-nix-migration:project-toolchain-selection
   pin-just-mise:mise-project-toolchain
   pin-just-nix:nix-project-toolchain
   edit-just-recipe:repository-work
   add-flake-package:nix-package-outputs
   global-nix:nix-user-tools
-  global-mise:mise-user-tools
+  global-self-upgrading-binary:nix-user-tools
+  global-windows-native:nix-user-tools
+  global-without-nix:nix-user-tools
   missing-one-shot:missing-tools
   npm-age-gate:mise-project-toolchain
   pressure-accidental-migration:project-toolchain-selection

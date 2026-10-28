@@ -1,13 +1,13 @@
 ---
 name: mise-project-toolchain
-description: Manages a project's mise+Aqua development toolchain. Use for existing mise projects, or after project-toolchain-selection confirms mise for a new project that may include Windows.
+description: Manages a project's mise+Aqua development toolchain. Use for existing mise projects, or after project-toolchain-selection selects mise, the default for new projects.
 ---
 
 # mise Project Toolchain
 
 Use this skill when mise is already authoritative or
-`project-toolchain-selection` has recorded the user's approval. Aqua is a
-mise backend, not a standalone toolchain.
+`project-toolchain-selection` has selected it. Aqua is a mise backend, not a
+standalone toolchain.
 
 ## Scope contract
 
@@ -35,7 +35,7 @@ work. Existing tasks may be invoked for validation.
    and language-local managers. If authoritative Nix development markers also
    exist, hand off to `project-toolchain-selection`.
 2. Preserve the current setup. For a new project, check that the selection
-   record approves mise before creating files.
+   report selects mise before creating files.
 3. Choose an exact version and backend. Read
    [references/backends-and-supply-chain.md](references/backends-and-supply-chain.md)
    for Aqua and corporate npm policy.

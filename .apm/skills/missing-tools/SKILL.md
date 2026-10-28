@@ -19,8 +19,9 @@ This skill owns one-shot recovery and scope triage, not persistent tool state.
    - **one-shot**: continue here;
    - **recurring project tool**: hand off to the authoritative owner,
      `nix-project-toolchain` or `mise-project-toolchain`;
-   - **explicit user-wide request**: hand off to `nix-user-tools` or
-     `mise-user-tools`.
+   - **explicit user-wide request**: hand off to `nix-user-tools`, which
+     also owns officially recommended self-upgrading binaries in
+     `~/.local/bin`.
 
 ## One-shot execution
 

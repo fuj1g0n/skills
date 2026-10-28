@@ -1,12 +1,12 @@
 ---
 name: nix-project-toolchain
-description: Manages a project's Nix development toolchain. Use for existing Nix devShell projects, or after project-toolchain-selection confirms Nix for a new guaranteed Linux-only project.
+description: Manages a project's Nix development toolchain. Use for existing Nix devShell projects, or after project-toolchain-selection selects Nix for a new project with Nix package outputs or an explicit Nix request.
 ---
 
 # Nix Project Toolchain
 
 Use this skill when Nix is already authoritative or
-`project-toolchain-selection` has recorded the user's approval.
+`project-toolchain-selection` has selected it.
 
 ## Scope contract
 
@@ -34,7 +34,7 @@ repository task work. Existing recipes may be invoked for validation.
    points, package-output constraints, and language-local managers. If active
    mise markers also exist, hand off to `project-toolchain-selection`.
 2. Continue the existing Nix layout. For a new project, check that the
-   selection record approves Nix before initialization.
+   selection report selects Nix before initialization.
 3. Add or update exact development tool pins in the devShell and shared
    development environment only. For the repository's zero-inputs convention,
    read [references/nix-files.md](references/nix-files.md).

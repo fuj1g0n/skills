@@ -22,23 +22,20 @@ initialize or mutate either toolchain.
       authority. Edit neither system meanwhile.
    3. An existing Nix development setup continues with Nix.
    4. An existing mise setup continues with mise+Aqua.
-   5. A new project has no default: Ask the user to approve a toolchain,
-      presenting the evidence, recommendation, and consequences of both.
-4. Report the evidence, recommendation, consequences, and intended owner.
-5. Once the owner is settled, hand off to `nix-project-toolchain` or
+   5. A new project defaults to mise+Aqua; see New projects.
+4. If the user explicitly asks to migrate from mise to Nix, Block: no skill
+   owns that migration. Report the request and the current markers and end
+   without changes.
+5. Report the evidence, recommendation, consequences, and intended owner.
+6. Once the owner is settled, hand off to `nix-project-toolchain` or
    `mise-project-toolchain`.
 
 ## New projects
 
-Infer platform needs from the project's purpose and expected developers,
-agents, editors, and automation. A Linux deployment target alone does not
-make a project Linux-only.
-
-- When development and execution are guaranteed Linux-only, recommend Nix.
-- When Windows may participate natively, including GHCP or other agents,
-  recommend mise+Aqua.
-- Discuss both choices in the new-project Ask; create no manifests before
-  the user approves.
+Select mise+Aqua by default and name the default in the report. Select Nix
+instead only when the project will define Nix package outputs (rule 1) or
+the user explicitly asks for Nix. Linux-only development or a Linux
+deployment target alone does not select Nix.
 
 ## Invariants
 
@@ -52,7 +49,7 @@ make a project Linux-only.
   development authorities drift.
 - Aqua is a mise backend, never an independent project toolchain, because a
   second manifest splits tool ownership.
-- Migration is explicit-only and belongs to
+- Migration is explicit-only and only Nix-to-mise is supported, through
   `nix-to-mise-project-toolchain`; Windows use alone is not a migration
   request, because Nix projects already run on Windows through WSL, a Dev
   Container, or wslc.
@@ -73,8 +70,8 @@ make a project Linux-only.
 
 - The report names the evidence, the selected toolchain, and the owning
   skill.
-- For a new project or mixed markers, the user approved the toolchain
-  before any manifest changed.
+- For mixed markers, the user approved the recovery plan before any
+  manifest changed.
 - Control is handed to the owning skill.
 
 For the routing corpus, RED/GREEN pressure cases, and blank-slate executor

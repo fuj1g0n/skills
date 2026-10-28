@@ -23,17 +23,19 @@ records either way.
 | [nix-project-toolchain](.apm/skills/nix-project-toolchain/SKILL.md) | Manage project developer tools, environment, activation, and visibility through Nix devShells | [srid/emanote](https://github.com/srid/emanote) |
 | [nix-wslc-devshell](.apm/skills/nix-wslc-devshell/SKILL.md) | Run an existing Nix project's devShell through its selected Windows-hosted wslc bridge | original |
 | [mise-project-toolchain](.apm/skills/mise-project-toolchain/SKILL.md) | Manage cross-platform project developer tools and environment through mise with Aqua as a backend | original |
-| [nix-user-tools](.apm/skills/nix-user-tools/SKILL.md) | Manage explicit user-wide Linux/WSL tools with `nix profile` | [wcygan/dotfiles](https://github.com/wcygan/dotfiles) |
-| [mise-user-tools](.apm/skills/mise-user-tools/SKILL.md) | Manage explicit user-wide native tool defaults with mise | original |
+| [nix-user-tools](.apm/skills/nix-user-tools/SKILL.md) | Manage explicit user-wide Linux/WSL tools with `nix profile`, preferring officially recommended self-upgrading binaries in `~/.local/bin` | [wcygan/dotfiles](https://github.com/wcygan/dotfiles) |
 | [nix-to-mise-project-toolchain](.apm/skills/nix-to-mise-project-toolchain/SKILL.md) | Perform explicit full-cutover Nix-to-mise migrations; block while Nix package outputs remain | original |
 | [nix-package-outputs](.apm/skills/nix-package-outputs/SKILL.md) | Define and validate Nix packages, apps, checks, derivations, OCI images, and release outputs without owning devShells or tasks | original |
 | [nix-github-rate-limit](.apm/skills/nix-github-rate-limit/SKILL.md) | Safe token injection via `gh auth token` for GitHub-backed Nix fetches | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
 | [nix-direnv-gc-roots](.apm/skills/nix-direnv-gc-roots/SKILL.md) | Clean up `.direnv` GC roots to reclaim Nix store space | [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles) |
 
-Project development has exactly one source of truth: Nix or mise+Aqua. Nix
-package outputs require Nix development; package-only flakes cannot accompany
-a mise toolchain. Toolchain skills may pin a task runner but do not define
-recipes. See `project-toolchain-selection`.
+Project development has exactly one source of truth: Nix or mise+Aqua. New
+projects default to mise+Aqua; Nix package outputs require Nix development,
+and package-only flakes cannot accompany a mise toolchain. Only Nix-to-mise
+migration is supported. User-wide tools use Nix in Linux or WSL, or an
+officially recommended self-upgrading binary in `~/.local/bin`; native
+Windows user-wide tools are not covered yet. Toolchain skills may pin a task
+runner but do not define recipes. See `project-toolchain-selection`.
 
 ## Install
 

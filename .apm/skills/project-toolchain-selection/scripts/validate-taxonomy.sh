@@ -8,7 +8,7 @@ failed=0
 
 required_skills=(
   project-toolchain-selection missing-tools nix-project-toolchain
-  mise-project-toolchain nix-user-tools mise-user-tools
+  mise-project-toolchain nix-user-tools
   nix-to-mise-project-toolchain nix-package-outputs
   nix-wslc-devshell nix-direnv-gc-roots nix-github-rate-limit
 )
@@ -38,7 +38,7 @@ for skill_file in "$skills_dir"/*/SKILL.md; do
   fi
 done
 
-old_pattern='nix-for''-dev|nix-''manager|nix-gc-''direnv'
+old_pattern='nix-for''-dev|nix-''manager|nix-gc-''direnv|mise-user''-tools'
 while IFS= read -r -d '' file; do
   relative="${file#"$root/"}"
   case "$relative" in

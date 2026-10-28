@@ -70,7 +70,7 @@ Project state: new | existing
 Authoritative markers: <paths and meanings>
 Ignored candidates: <paths and reason>
 Package-output constraint: present | absent | uncertain
-Recommendation: Nix | mise+Aqua | stop and clarify
+Recommendation: Nix | mise+Aqua | blocked | clarify
 Confirmation required: yes | no
 Primary owner after selection: <skill name>
 ```

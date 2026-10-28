@@ -61,5 +61,5 @@ co-owners; place handoffs in the required outcome instead.
 
 Old names are allowed only under `docs/research/**`, where research
 snapshots remain immutable. Any occurrence of
-`nix-for-dev`, `nix-manager`, or `nix-gc-direnv` outside that explicit
-historical allowlist is a validation failure.
+`nix-for-dev`, `nix-manager`, `nix-gc-direnv`, or `mise-user-tools` outside
+that explicit historical allowlist is a validation failure.
