@@ -61,12 +61,8 @@ commit that includes it.
 
 ### Copilot CLI plugin
 
-```sh
-copilot plugin install fuj1g0n/skills
-```
-
-For a pinned install, add an entry with a full 40-char commit SHA to a
-plugin marketplace's `.github/plugin/marketplace.json`:
+Add an entry pinned to a full 40-char commit SHA to a plugin marketplace's
+`.github/plugin/marketplace.json`:
 
 ```json
 {
@@ -90,21 +86,25 @@ copilot plugin marketplace update <marketplace>
 copilot plugin update skills@<marketplace>
 ```
 
+`copilot plugin install fuj1g0n/skills` also works for a quick try, but
+Copilot CLI deprecates direct installs in favor of `plugin@marketplace`.
+
 ### APM
 
-APM installs the repository as a plugin collection, without transitive
-dependencies:
+APM installs the repository as an Agent Plugin, without transitive
+dependencies, and registers it with Copilot as `skills@apm`. Declare it in
+`apm.yml` (`~/.apm/apm.yml` for user scope) and run `apm install` (`-g` for
+user scope); APM rejects imperative installs of Agent Plugins from a local
+path.
 
-```sh
-apm install -g fuj1g0n/skills#<full-40-char-sha>
+```yaml
+dependencies:
+  apm:
+    - fuj1g0n/skills#<full-40-char-sha>
 ```
 
 The `apm-usage` skill that `skill-management` defers to is not bundled;
-declare it separately:
-
-```sh
-apm install -g microsoft/apm/packages/apm-guide#<full-40-char-sha>
-```
+declare `microsoft/apm/packages/apm-guide#<full-40-char-sha>` separately.
 
 Pin with a full 40-char commit SHA; short SHAs and floating branches do not
 resolve reliably.
