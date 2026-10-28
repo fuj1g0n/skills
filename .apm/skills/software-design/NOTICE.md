@@ -9,4 +9,8 @@
   [github/awesome-copilot](https://github.com/github/awesome-copilot)
   `create-architectural-decision-record` (MIT); trigger-calibration ideas
   from tclem/dotfiles `adr-author` (concepts only, no text copied).
-- Research-material tiering is original to this skill.
+- The design workflow, proportional artifact selection, and optional-plugin
+  adapter are original text. Primary conceptual sources and their limits
+  are linked in [references/evidence.md](references/evidence.md).
+- Ponytail and pstack instructions were inspected for interoperability;
+  their workflow text is not vendored here.

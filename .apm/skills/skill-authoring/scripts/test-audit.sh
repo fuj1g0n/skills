@@ -114,12 +114,12 @@ make_skill c13n other "Other fixture."
 expect C13 c13p present
 expect C13 c13n absent
 
-make_skill c14p adr "Body."
-mkdir -p "$root/c14p/adr/references"
-printf 'Use MUST here.\n' >"$root/c14p/adr/references/notes.md"
-make_skill c14n adr "Body."
-mkdir -p "$root/c14n/adr/references"
-printf 'Use MUST here.\n' >"$root/c14n/adr/references/madr-template.md"
+make_skill c14p software-design "Body."
+mkdir -p "$root/c14p/software-design/references"
+printf 'Use MUST here.\n' >"$root/c14p/software-design/references/notes.md"
+make_skill c14n software-design "Body."
+mkdir -p "$root/c14n/software-design/references"
+printf 'Use MUST here.\n' >"$root/c14n/software-design/references/madr-template.md"
 expect C01 c14p present
 expect C01 c14n absent
 covered+=("C14")
