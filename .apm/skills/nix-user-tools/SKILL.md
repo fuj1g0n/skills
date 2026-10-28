@@ -1,6 +1,6 @@
 ---
 name: nix-user-tools
-description: Manages explicit user-wide Linux or WSL tools through Nix profiles or officially recommended self-upgrading binaries in ~/.local/bin. Use only for requested global installs, updates, removals, rollback, or user-profile diagnosis.
+description: Manages explicit user-wide tools in Linux or WSL through Nix profiles or officially recommended self-upgrading binaries in ~/.local/bin, and blocks native Windows requests. Use only for requested global installs, updates, removals, rollback, or user-profile diagnosis.
 ---
 
 # Nix User Tools

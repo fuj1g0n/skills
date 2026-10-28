@@ -1,6 +1,6 @@
 ---
 name: mise-project-toolchain
-description: Manages a project's mise+Aqua development toolchain. Use for existing mise projects, or after project-toolchain-selection selects mise, the default for new projects.
+description: Manages a project's mise+Aqua tools, including adding, pinning, updating, or removing CLIs and runtimes, and activation or PATH visibility in shells, editors, and agents. Use in existing mise projects or after project-toolchain-selection selects mise.
 ---
 
 # mise Project Toolchain

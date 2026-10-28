@@ -1,6 +1,6 @@
 ---
 name: missing-tools
-description: Resolves a missing CLI for one-shot use without persistent mutation. Use on command-not-found errors; route recurring or user-wide needs to the existing authoritative owner.
+description: Triages CLI install requests and resolves one-shot needs without persistent mutation. Use on command-not-found errors, or when a request to install or run a tool does not say whether it is one-shot, per-project, or user-wide.
 ---
 
 # Missing Tools

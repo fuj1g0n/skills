@@ -1,6 +1,6 @@
 ---
 name: nix-project-toolchain
-description: Manages a project's Nix development toolchain. Use for existing Nix devShell projects, or after project-toolchain-selection selects Nix for a new project with Nix package outputs or an explicit Nix request.
+description: Manages a project's Nix devShell tools, including adding, pinning, updating, or removing CLIs and runtimes, and direnv activation or PATH visibility. Use in existing Nix devShell projects or after project-toolchain-selection selects Nix.
 ---
 
 # Nix Project Toolchain
