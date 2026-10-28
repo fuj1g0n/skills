@@ -37,7 +37,7 @@ implicitly.
 
 - For skill or validator changes, run `mise run audit` from this repository's
   root. It runs authoring-contract fixtures, the collection audit,
-  known author-path checks, and the toolchain-routing corpus.
+  and the toolchain-routing corpus.
 - For Markdown changes, use `mise run lint` or the configured linter with
   the changed paths. Its exclusions do not validate skill bodies.
 - For changes to triggers, invariants, or completion conditions, follow

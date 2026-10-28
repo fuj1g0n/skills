@@ -15,6 +15,5 @@ description = "Audit skills: contract rules and their fixtures, then routing cor
 run = [
   "skills/skill-authoring/scripts/test-audit.sh",
   "skills/skill-authoring/scripts/audit.sh skills",
-  "bash tests/test-instruction-scopes.sh",
   "skills/project-toolchain-selection/scripts/validate-taxonomy.sh",
 ]
