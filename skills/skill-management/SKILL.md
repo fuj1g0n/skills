@@ -1,122 +1,114 @@
 ---
 name: skill-management
-description: Operational rules for distributing agent skills as Copilot plugins and installing third-party skills via APM. Use when adding, updating, removing, or evaluating skills, user-wide or per-project, or when editing skills in the personal skills repository.
+description: Manages agent package distribution and consumption. Use when packaging, publishing, evaluating, adopting, updating, or removing skills or plugins in a project or user environment.
 ---
 
-# Skill Management
+# Skill management
 
-The personal skills repo is an Agent Plugin installed through the user's
-Copilot plugin marketplace. Third-party skills used unmodified come from APM,
-or from a marketplace entry when upstream ships a plugin. Install targets such
-as `~/.copilot/installed-plugins/` and `~/.agents/skills/` are managed output.
+Identify the requested workflow: prepare a package, publish it, or change a
+consumer. Read the applicable repository instructions and existing
+configuration before choosing commands. Preparation does not authorize
+publication, and publication does not require installing the package.
 
-For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
-(from `microsoft/apm/packages/apm-guide`).
+Prefer Agent Plugins for portable distribution and APM for consumption when
+the adopter has not selected another workflow. Respect an explicit existing
+format or manager. Package format and installer are independent decisions.
 
-## Layout
+For writing skill content, use `skill-authoring` when available. Its absence
+does not authorize installing another dependency or changing the task.
 
-- **Personal skills repo**: github.com/fuj1g0n/skills
-  (clone: `~/workspace/github.com/fuj1g0n/skills`, layout: root
-  `plugin.json` plus `skills/<name>/SKILL.md`)
-- **Marketplace**: `.github/plugin/marketplace.json` in
-  github.com/fuj1g0n/.dotfiles (clone: `~/workspace/github.com/fuj1g0n/.dotfiles`),
-  marketplace name `dotfiles`; Copilot reads it from GitHub, not the clone
-- **User scope APM manifest**: `~/.apm/apm.yml`; deploys to `~/.agents/skills/`
-- **Project scope APM manifest**: `apm.yml` in the repo; commit `apm.yml` and
-  `apm.lock.yaml`, gitignore `apm_modules/`
+## Prepare or publish a package
 
-## Editing personal skills
+1. Locate the producer's source, package manifest, and release instructions.
+   Edit sources rather than installed copies.
+2. For a new portable package, use the
+   [Agent Plugins specification](https://agent-plugins.org/).
+   Inspect the root `plugin.json`, declared components, and intended clients.
+   Keep portable skills and MCP configuration separate from namespaced
+   client-specific capabilities. A dependency-free plugin does not need an
+   APM manifest just to support APM consumers.
+3. Validate component paths, skill metadata, licenses, and required client
+   capabilities using the producer's applicable checks.
+4. For a publication request, follow that producer's branch, version,
+   approval, and release policy. Publish the validated artifact at the
+   requested reference. For preparation only, leave it unpublished.
 
-1. Edit under `~/workspace/github.com/fuj1g0n/skills/skills/<name>/`.
-2. Commit and land the change on `main` (push, or merge the PR), then
-   `git switch main && git pull --ff-only` so `HEAD` is the landed commit.
-3. Pin that commit in the `skills` entry of the dotfiles marketplace, then
-   land the dotfiles change on its `main`:
+Consumer pins and installations are separate work. Do not select a consumer
+repository or update one merely because a producer changed.
 
-   ```json
-   {
-     "name": "skills",
-     "source": {
-       "source": "github",
-       "repo": "fuj1g0n/skills",
-       "sha": "<full-40-char-sha>"
-     }
-   }
+## Adopt or update a package
+
+1. Inspect existing skills and plugins for overlap. Read the candidate's
+   instructions and license before adopting it. Modify upstream material
+   only when its license permits that use.
+2. Identify the actual consumer manifest, requested scope, selected tools,
+   and current deployment owner. Follow symlinks to their maintained source.
+   Use an existing configuration repository when the adopter has one.
+3. If scope is unspecified, use project scope for project-specific work and
+   user scope for a personal cross-project request. Otherwise default to
+   project scope in the current repository and report that choice.
+4. Select a full commit SHA by default. Use a release tag only when consumer
+   policy permits it. Preserve explicitly selected targets instead of
+   inferring tools from a portable format.
+5. Change only that consumer's source. For APM, use available `apm-usage`
+   guidance or the [APM documentation](https://github.com/microsoft/apm).
+   Declare an Agent Plugin dependency in the consumer manifest:
+
+   ```yaml
+   dependencies:
+     apm:
+       - owner/repo#<full-40-char-sha>
    ```
 
-4. Refresh the install:
+6. If installation is requested, run the command for the chosen scope:
 
-   ```sh
-   copilot plugin marketplace update dotfiles && copilot plugin update skills@dotfiles
-   ```
+   | Scope | Default manifest | Command |
+   | --- | --- | --- |
+   | Project | `apm.yml` in that project | `apm install` from the project |
+   | User | `~/.apm/apm.yml` | `apm install -g` |
 
-   On a machine without the plugin, run
-   `copilot plugin install skills@dotfiles` instead.
+   For a manifest-only request, leave deployment unchanged and report that
+   installation was not performed.
+7. For an installation, verify registration and discovery of the required
+   components in every selected tool. Report missing capabilities with the
+   package revision, installer and runtime versions, and reproduction.
+   A successful installer exit is not proof of component support.
 
-## Adopting third-party skills
+For a compatibility fallback, record the affected package, tool, capability,
+workaround, and revisit condition in the consumer's own documentation.
+An existing native-marketplace policy does not require an APM failure first.
+APM's generated marketplace remains APM-managed output, not a second manager.
 
-Skills are cheap on disk but not free: every installed skill consumes context
-in every conversation. Install deliberately.
+## Remove or transfer ownership
 
-1. **Check existing skills first**: personal repo README and already
-   installed skills (`copilot plugin list`, `ls ~/.agents/skills/`). Do not
-   install near-duplicates.
-2. **Only install for recurring needs.** One-off tasks are solved inline.
-3. **Read the SKILL.md before installing.** Descriptions can oversell;
-   check that the instructions fit this environment (WSL2, bash, the
-   project toolchains owned by `project-toolchain-selection`) and do not
-   contradict installed skills.
-4. **Check the license.** If the upstream repo has no license, do not copy
-   its text into the personal repo; either install it as-is, or write an
-   original skill inspired by the concepts.
-5. Prefer **forking into fuj1g0n/skills** (rewritten, adapted) when
-   customization for this environment is needed. For upstream skills used
-   as-is, add a full-SHA marketplace entry when upstream ships a plugin;
-   otherwise install via APM (e.g., `microsoft/apm/packages/apm-guide`).
-6. Install via APM with a full-SHA pin:
-
-   ```sh
-   SHA=$(gh api repos/<owner>/<repo>/commits/<branch> --jq .sha)
-   apm install -g "<owner>/<repo>[/path]#$SHA"
-   ```
-
-The personal plugin carries no dependencies; declare each third-party skill
-directly in the consumer's manifest (`~/.apm/apm.yml` or the marketplace).
-
-## Scope decision
-
-| Situation | Scope |
-|-----------|-------|
-| Personal workflow, applies everywhere | user (`skills@dotfiles` plugin, or `apm install -g` into `~/.apm/apm.yml`) |
-| Project/team convention, tied to one repo | project (`apm.yml` in repo, commit lockfile) |
-| Unclear | project scope inside the repository the skill serves, otherwise user scope; report the choice |
-
-## Removing skills
-
-- Personal plugin: `copilot plugin uninstall skills@dotfiles`, then remove
-  its marketplace entry if it should stay gone.
-- A skill inside the personal plugin: delete `skills/<name>/` and release
-  as in Editing personal skills.
-- APM dependency: `apm uninstall -g <owner>/<repo>`, then verify the
-  directory is gone from `~/.agents/skills/`. If a skill was hand-modified
-  after deployment, APM refuses to remove it; delete it manually.
+- To remove a skill from a producer, edit that producer's sources and follow
+  the requested preparation or publication workflow.
+- To remove a consumer dependency, change its maintained manifest or use
+  its manager's scoped uninstall operation. Apply the removal only when
+  requested, then check the selected tools for stale components.
+- Before changing managers, identify the overlapping deployment and transfer
+  ownership without removing deployments belonging to other tools or scopes.
+- If removal is refused because files were modified, inspect the changes
+  and preserve them before any separately authorized deletion. Do not
+  silently discard local work.
 
 ## Invariants
 
-- Edit sources, never installed copies under `~/.copilot/installed-plugins/`
-  or `~/.agents/skills/`, because updates overwrite them and APM refuses to
-  remove hand-modified output.
-- Pin every marketplace entry and APM dependency to a full 40-char commit
-  SHA (APM also accepts a release tag), because floating branches drift and
-  short SHAs do not resolve reliably.
-- No unlicensed upstream text in the personal repo, because only MIT/Apache
-  text may be adapted; install it as-is or write an original instead.
+- Edit maintained sources rather than downloaded or generated files, because
+  managers overwrite outputs or refuse to remove modified copies.
+- Keep one deployment owner per package, tool, and scope, because overlapping
+  installations can shadow skills or execute hooks twice.
+- Keep the requested workflow and scope unchanged, because publishing,
+  consumer updates, and user-level installation have different effects.
 
 ## Done when
 
-- The dotfiles marketplace `skills` entry pins the landed commit's full SHA,
-  and that change is on the dotfiles `main`.
-- `copilot plugin list` shows `skills@dotfiles`, and
-  `~/.copilot/installed-plugins/dotfiles/skills/skills/` holds the new
-  content (or no longer holds a removed skill).
-- APM changes: `apm install -g` lists them, and `~/.agents/skills/` matches.
+- For preparation, the requested artifact passes applicable producer checks.
+  For publication, that validated artifact is available at the agreed
+  reference. Neither requires an unrelated consumer update.
+- For a consumer source change, the correct maintained manifest records the
+  requested revision and targets. A manifest-only task leaves deployment
+  unchanged.
+- For installation, removal, or ownership transfer, the requested components
+  are discoverable or absent as appropriate in each selected tool.
+  Missing capabilities remain reported failures, not completed installations.

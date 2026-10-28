@@ -4,8 +4,12 @@ Home for everything involved in developing agent skills that reproduce
 @fuj1g0n's development environment and process: the research
 ([docs/research/](docs/research/)) and the resulting skills
 (`skills/`), which are the deliverables.
-The repository is an [Agent Plugin](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference) (root
-`plugin.json`), installed user-wide as a Copilot CLI plugin.
+The repository is an [Agent Plugins](https://agent-plugins.org/) package with
+a root `plugin.json`. Distribution format and consumption management are
+independent: prefer Agent Plugins for a shared, vendor-neutral structure
+across compatible tools, and APM for managing dependencies and deployment
+across explicitly selected tools. Format portability does not guarantee
+support for every component in every tool.
 
 Not every investigation yields a skill; research snapshots are kept as
 records either way.
@@ -14,8 +18,8 @@ records either way.
 
 | Skill | Purpose | Adapted from |
 |-------|---------|--------------|
-| [skill-management](skills/skill-management/SKILL.md) | Operational rules: plugin marketplace release, APM for third-party skills, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
-| [skill-authoring](skills/skill-authoring/SKILL.md) | Quality rules for writing skills: authoring contract (Ask, Hand off, Block, Done when, Invariants) enforced by `mise run audit`, description discipline, cross-model subagent testing | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
+| [skill-management](skills/skill-management/SKILL.md) | Operational rules: distribution formats, APM-managed consumption, compatibility exceptions, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
+| [skill-authoring](skills/skill-authoring/SKILL.md) | Quality rules for writing skills: authoring contract, description discipline, explicit-source validation, and behavior evaluation using the adopter's selected targets | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
 | [software-design](skills/software-design/SKILL.md) | Resolve design questions and preserve the smallest useful artifact: inline reasoning, design document, or ADR; reuse active Ponytail/pstack workflows | original design workflow; ADR concepts adapted from [cassiobotaro/skills](https://github.com/cassiobotaro/skills), [wshobson/agents](https://github.com/wshobson/agents), [github/awesome-copilot](https://github.com/github/awesome-copilot), all MIT; MADR templates from [adr/madr](https://github.com/adr/madr) |
 | [documentation](skills/documentation/SKILL.md) | Project documentation formats: Diátaxis docs/ organization, standard-readme, Keep a Changelog, docs-as-code hygiene, OKF bundle conventions | original (adapted from [RichardLitt/standard-readme](https://github.com/RichardLitt/standard-readme) and [wshobson/agents](https://github.com/wshobson/agents), both MIT; concepts from [diataxis.fr](https://diataxis.fr/) and [keepachangelog.com](https://keepachangelog.com/)) |
 | [project-toolchain-selection](skills/project-toolchain-selection/SKILL.md) | Select the one project development toolchain: mise by default, Nix only for projects distributed through Nix | original |
@@ -59,40 +63,13 @@ commit that includes it.
 
 ## Install
 
-### Copilot CLI plugin
-
-Add an entry pinned to a full 40-char commit SHA to a plugin marketplace's
-`.github/plugin/marketplace.json`:
-
-```json
-{
-  "name": "skills",
-  "source": {
-    "source": "github",
-    "repo": "fuj1g0n/skills",
-    "sha": "<full-40-char-sha>"
-  }
-}
-```
-
-```sh
-copilot plugin install skills@<marketplace>
-```
-
-After bumping the SHA, update with:
-
-```sh
-copilot plugin marketplace update <marketplace>
-copilot plugin update skills@<marketplace>
-```
-
-`copilot plugin install fuj1g0n/skills` also works for a quick try, but
-Copilot CLI deprecates direct installs in favor of `plugin@marketplace`.
-
 ### APM
 
-APM installs the repository as an Agent Plugin, without transitive
-dependencies, and registers it with Copilot as `skills@apm`. Declare it in
+APM is the preferred consumption manager, not the distribution format.
+Select targets explicitly in the consumer manifest and verify the components
+each tool receives. On the tested Copilot path, APM installs the repository
+as a native `skills@apm` Agent Plugin without transitive dependencies.
+Declare it in
 `apm.yml` (`~/.apm/apm.yml` for user scope) and run `apm install` (`-g` for
 user scope); APM rejects imperative installs of Agent Plugins from a local
 path.
@@ -106,10 +83,35 @@ dependencies:
 The `apm-usage` skill that `skill-management` defers to is not bundled;
 declare `microsoft/apm/packages/apm-guide#<full-40-char-sha>` separately.
 
+Update the dependency's SHA in the maintained manifest source.
+For project scope, run `apm install` from that project.
+For user scope, run `apm install -g`.
+Do not install or update `skills@apm` with `copilot plugin` commands.
+If an older setup installed `skills@dotfiles`, uninstall that plugin before
+switching to APM.
+
 Pin with a full 40-char commit SHA; short SHAs and floating branches do not
 resolve reliably.
 
+### Native Copilot marketplace
+
+APM is the default recommendation, not a requirement to replace an adopter's
+explicit manager policy. A native Copilot marketplace can consume this Agent
+Plugins package directly. An APM failure is not a prerequisite.
+For a native marketplace, declare `fuj1g0n/skills` as a GitHub source pinned
+to a full commit SHA, then use `copilot plugin install skills@<marketplace>`.
+Use the [Copilot marketplace reference](https://docs.github.com/en/copilot/reference/plugin-and-marketplace-reference)
+for the entry format.
+Do not install the same package through two managers in the same tool and
+scope. APM's generated marketplace remains APM-managed consumption.
+Record compatibility failures and workarounds in the affected consumer.
+
 ## Development
+
+The [instruction scopes](docs/design/skill-instruction-scopes.md) separate
+reusable adopter workflows from this repository's maintenance procedures
+and consumer-specific configuration.
+Read [AGENTS.md](AGENTS.md) for contributor instructions.
 
 Development tools and tasks are defined in `mise.toml` and pinned in
 `mise.lock`, including the npm dependency graph under `.mise/locks/`.
@@ -120,6 +122,22 @@ mise install
 mise run audit   # skill contract audit and routing corpus
 mise run lint    # Markdown lint
 ```
+
+### Evaluation profile
+
+This collection's behavior-evaluation profile is a maintainer choice.
+It is not a requirement for users of the distributed skills.
+Run each required scenario with fresh agents on both targets:
+
+| Target model | Effort |
+| --- | --- |
+| Claude Opus 5.5 | `medium` |
+| GPT-6.1 Sol | `medium` |
+
+Use the [shared evaluation method](skills/skill-authoring/references/testing-skills.md).
+Report unavailable targets as unverified. Mechanical checks or repeated runs
+on one model do not satisfy this cross-model profile.
+Publish only when requested. A release does not itself update any consumer.
 
 ## Documentation
 

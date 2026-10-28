@@ -40,6 +40,20 @@ expect() {
 
 done_when=$'## Done when\n\n- The fixture exists.'
 
+for args in none extra; do
+  status=0
+  if [[ $args == none ]]; then
+    out="$("$script_dir/audit.sh" 2>&1)" || status=$?
+  else
+    out="$("$script_dir/audit.sh" "$root" "$root" 2>&1)" || status=$?
+  fi
+  if [[ $status != 2 || $out != *"explicit source collection required"* ]]; then
+    echo "FAIL: $args arguments must fail with usage, not audit another source" >&2
+    echo "$out" >&2
+    failures=$((failures + 1))
+  fi
+done
+
 make_skill c01p s "Do NOT run this."
 make_skill c01n s $'Run `NOT_A_FLAG` safely.\n\n```sh\necho NEVER\n```'
 expect C01 c01p present
