@@ -54,11 +54,6 @@ while IFS= read -r -d '' file; do
   fi
 done < <(find "$root" -type f -print0)
 
-if [[ -e "$root/mise.toml" || -e "$root/.mise.toml" ]]; then
-  echo "Repository-root mise configuration is forbidden for this taxonomy" >&2
-  failed=1
-fi
-
 if grep -RInE --exclude='routing-tests.md' --exclude='validate-taxonomy.sh' \
   'npx -y|@[Ll]atest|--registry([=[:space:]]|$)|registry\.npmjs\.org' \
   "$skills_dir/project-toolchain-selection" \

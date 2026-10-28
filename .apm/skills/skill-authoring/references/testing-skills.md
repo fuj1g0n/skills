@@ -21,7 +21,7 @@ grows past ~20 skills.
 ## 0. When to run and on which models
 
 Run an evaluation when a change touches an Ask, an invariant, a
-`## Done when` bullet, or a description. Other edits rely on `just audit`;
+`## Done when` bullet, or a description. Other edits rely on `mise run audit`;
 testing more than the change needs costs time without new signal.
 
 Every scenario runs on each target model, a fresh subagent per model per
