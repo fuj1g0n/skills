@@ -6,8 +6,9 @@ description: Guides authoring, editing, and auditing agent skills (SKILL.md). Us
 # Skill Authoring
 
 Quality rules for writing skills and keeping the collection healthy. This
-skill owns *how to write* a skill; the `skill-management` skill owns *how to
-deploy* one (APM, pinning, install) — follow it for every release.
+skill owns *how to write* a skill. For *how to distribute* it (Agent Plugins
+packaging and release), follow `skill-management`. APM pinning and
+installation belong to its separate consumer workflow.
 
 ## When a new skill is warranted
 
@@ -116,8 +117,8 @@ rg -N '^description:' skills/*/SKILL.md
 
 ## Release checks
 
-Before committing a skill change, run `mise run audit`; then release via the
-`skill-management` workflow.
+Before committing a skill change, run `mise run audit`; then follow the
+`skill-management` packaging and release guidance for Agent Plugins.
 
 ## Done when
 
