@@ -7,7 +7,7 @@ description: Guides authoring, editing, and auditing agent skills (SKILL.md). Us
 
 Quality rules for writing skills and keeping the collection healthy. This
 skill owns *how to write* a skill; the `skill-management` skill owns *how to
-deploy* one (plugin marketplace, pinning, install) — follow it for every release.
+deploy* one (APM, pinning, install) — follow it for every release.
 
 ## When a new skill is warranted
 

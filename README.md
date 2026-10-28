@@ -5,7 +5,7 @@ Home for everything involved in developing agent skills that reproduce
 ([docs/research/](docs/research/)) and the resulting skills
 (`skills/`), which are the deliverables.
 The repository is an [Agent Plugin](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference) (root
-`plugin.json`), installed user-wide as a Copilot CLI plugin.
+`plugin.json`), installed user-wide through APM as a native Copilot CLI plugin.
 
 Not every investigation yields a skill; research snapshots are kept as
 records either way.
@@ -14,7 +14,7 @@ records either way.
 
 | Skill | Purpose | Adapted from |
 |-------|---------|--------------|
-| [skill-management](skills/skill-management/SKILL.md) | Operational rules: plugin marketplace release, APM for third-party skills, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
+| [skill-management](skills/skill-management/SKILL.md) | Operational rules: APM release and installation, marketplace compatibility exceptions, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
 | [skill-authoring](skills/skill-authoring/SKILL.md) | Quality rules for writing skills: authoring contract (Ask, Hand off, Block, Done when, Invariants) enforced by `mise run audit`, description discipline, cross-model subagent testing | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
 | [software-design](skills/software-design/SKILL.md) | Resolve design questions and preserve the smallest useful artifact: inline reasoning, design document, or ADR; reuse active Ponytail/pstack workflows | original design workflow; ADR concepts adapted from [cassiobotaro/skills](https://github.com/cassiobotaro/skills), [wshobson/agents](https://github.com/wshobson/agents), [github/awesome-copilot](https://github.com/github/awesome-copilot), all MIT; MADR templates from [adr/madr](https://github.com/adr/madr) |
 | [documentation](skills/documentation/SKILL.md) | Project documentation formats: Diátaxis docs/ organization, standard-readme, Keep a Changelog, docs-as-code hygiene, OKF bundle conventions | original (adapted from [RichardLitt/standard-readme](https://github.com/RichardLitt/standard-readme) and [wshobson/agents](https://github.com/wshobson/agents), both MIT; concepts from [diataxis.fr](https://diataxis.fr/) and [keepachangelog.com](https://keepachangelog.com/)) |
@@ -59,36 +59,6 @@ commit that includes it.
 
 ## Install
 
-### Copilot CLI plugin
-
-Add an entry pinned to a full 40-char commit SHA to a plugin marketplace's
-`.github/plugin/marketplace.json`:
-
-```json
-{
-  "name": "skills",
-  "source": {
-    "source": "github",
-    "repo": "fuj1g0n/skills",
-    "sha": "<full-40-char-sha>"
-  }
-}
-```
-
-```sh
-copilot plugin install skills@<marketplace>
-```
-
-After bumping the SHA, update with:
-
-```sh
-copilot plugin marketplace update <marketplace>
-copilot plugin update skills@<marketplace>
-```
-
-`copilot plugin install fuj1g0n/skills` also works for a quick try, but
-Copilot CLI deprecates direct installs in favor of `plugin@marketplace`.
-
 ### APM
 
 APM installs the repository as an Agent Plugin, without transitive
@@ -106,8 +76,20 @@ dependencies:
 The `apm-usage` skill that `skill-management` defers to is not bundled;
 declare `microsoft/apm/packages/apm-guide#<full-40-char-sha>` separately.
 
+Update the dependency's SHA in the manifest and rerun `apm install -g`.
+Do not install or update `skills@apm` with `copilot plugin` commands.
+If an older setup installed `skills@dotfiles`, uninstall that plugin before
+switching to APM.
+
 Pin with a full 40-char commit SHA; short SHAs and floating branches do not
 resolve reliably.
+
+### Marketplace exceptions
+
+Use a manually managed Copilot marketplace only when APM installation has a
+reproduced compatibility problem. Agent Plugins format alone is not a reason
+to bypass APM. Keep the failing behavior and the required workaround
+documented in the consumer repository.
 
 ## Development
 

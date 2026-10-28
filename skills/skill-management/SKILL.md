@@ -1,14 +1,15 @@
 ---
 name: skill-management
-description: Operational rules for distributing agent skills as Copilot plugins and installing third-party skills via APM. Use when adding, updating, removing, or evaluating skills, user-wide or per-project, or when editing skills in the personal skills repository.
+description: Manages agent skill distribution and installation through APM. Use when adding, updating, removing, or evaluating skills, user-wide or per-project, or when editing skills in the personal skills repository.
 ---
 
 # Skill Management
 
-The personal skills repo is an Agent Plugin installed through the user's
-Copilot plugin marketplace. Third-party skills used unmodified come from APM,
-or from a marketplace entry when upstream ships a plugin. Install targets such
-as `~/.copilot/installed-plugins/` and `~/.agents/skills/` are managed output.
+Use APM for personal and third-party skills, including Agent Plugins.
+Use a manually managed Copilot marketplace only for a reproduced APM
+compatibility problem. Keep the failure and workaround documented in the
+consumer repository. Install targets such as `~/.apm/apm_modules/`,
+`~/.copilot/installed-plugins/`, and `~/.agents/skills/` are managed output.
 
 For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
 (from `microsoft/apm/packages/apm-guide`).
@@ -18,10 +19,12 @@ For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
 - **Personal skills repo**: github.com/fuj1g0n/skills
   (clone: `~/workspace/github.com/fuj1g0n/skills`, layout: root
   `plugin.json` plus `skills/<name>/SKILL.md`)
-- **Marketplace**: `.github/plugin/marketplace.json` in
-  github.com/fuj1g0n/.dotfiles (clone: `~/workspace/github.com/fuj1g0n/.dotfiles`),
-  marketplace name `dotfiles`; Copilot reads it from GitHub, not the clone
-- **User scope APM manifest**: `~/.apm/apm.yml`; deploys to `~/.agents/skills/`
+- **User scope APM manifest source**:
+  `~/workspace/github.com/fuj1g0n/.dotfiles/apm/.apm/apm.yml`, symlinked to
+  `~/.apm/apm.yml`. Agent Plugins register as native plugins such as
+  `skills@apm`; other skills deploy to `~/.agents/skills/`.
+- **Marketplace exceptions**: `.github/plugin/marketplace.json` in
+  github.com/fuj1g0n/.dotfiles, marketplace name `dotfiles`.
 - **Project scope APM manifest**: `apm.yml` in the repo; commit `apm.yml` and
   `apm.lock.yaml`, gitignore `apm_modules/`
 
@@ -30,28 +33,23 @@ For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
 1. Edit under `~/workspace/github.com/fuj1g0n/skills/skills/<name>/`.
 2. Commit and land the change on `main` (push, or merge the PR), then
    `git switch main && git pull --ff-only` so `HEAD` is the landed commit.
-3. Pin that commit in the `skills` entry of the dotfiles marketplace, then
+3. Pin that commit in the dotfiles APM manifest source, then
    land the dotfiles change on its `main`:
 
-   ```json
-   {
-     "name": "skills",
-     "source": {
-       "source": "github",
-       "repo": "fuj1g0n/skills",
-       "sha": "<full-40-char-sha>"
-     }
-   }
+   ```yaml
+   dependencies:
+     apm:
+       - fuj1g0n/skills#<full-40-char-sha>
    ```
 
 4. Refresh the install:
 
    ```sh
-   copilot plugin marketplace update dotfiles && copilot plugin update skills@dotfiles
+   cd ~/workspace/github.com/fuj1g0n/.dotfiles && apm install -g
    ```
 
-   On a machine without the plugin, run
-   `copilot plugin install skills@dotfiles` instead.
+   If `skills@dotfiles` is still installed, uninstall it before switching
+   to APM. APM owns `skills@apm`; do not update it with `copilot plugin`.
 
 ## Adopting third-party skills
 
@@ -71,8 +69,8 @@ in every conversation. Install deliberately.
    original skill inspired by the concepts.
 5. Prefer **forking into fuj1g0n/skills** (rewritten, adapted) when
    customization for this environment is needed. For upstream skills used
-   as-is, add a full-SHA marketplace entry when upstream ships a plugin;
-   otherwise install via APM (e.g., `microsoft/apm/packages/apm-guide`).
+   as-is, install via APM, including when upstream ships an Agent Plugin
+   (e.g., `fuj1g0n/skills`).
 6. Install via APM with a full-SHA pin:
 
    ```sh
@@ -81,25 +79,27 @@ in every conversation. Install deliberately.
    ```
 
 The personal plugin carries no dependencies; declare each third-party skill
-directly in the consumer's manifest (`~/.apm/apm.yml` or the marketplace).
+directly in the consumer's APM manifest, including
+`microsoft/apm/packages/apm-guide` for `apm-usage`.
 
 ## Scope decision
 
 | Situation | Scope |
 |-----------|-------|
-| Personal workflow, applies everywhere | user (`skills@dotfiles` plugin, or `apm install -g` into `~/.apm/apm.yml`) |
+| Personal workflow, applies everywhere | user (`apm install -g` from `~/.apm/apm.yml`) |
 | Project/team convention, tied to one repo | project (`apm.yml` in repo, commit lockfile) |
 | Unclear | project scope inside the repository the skill serves, otherwise user scope; report the choice |
 
 ## Removing skills
 
-- Personal plugin: `copilot plugin uninstall skills@dotfiles`, then remove
-  its marketplace entry if it should stay gone.
+- Personal plugin: remove `fuj1g0n/skills` from the dotfiles APM manifest
+  source and run `apm install -g`.
 - A skill inside the personal plugin: delete `skills/<name>/` and release
   as in Editing personal skills.
 - APM dependency: `apm uninstall -g <owner>/<repo>`, then verify the
   directory is gone from `~/.agents/skills/`. If a skill was hand-modified
-  after deployment, APM refuses to remove it; delete it manually.
+  after deployment, APM refuses to remove it; inspect and back it up before
+  removing it.
 
 ## Invariants
 
@@ -114,9 +114,9 @@ directly in the consumer's manifest (`~/.apm/apm.yml` or the marketplace).
 
 ## Done when
 
-- The dotfiles marketplace `skills` entry pins the landed commit's full SHA,
+- The dotfiles APM manifest pins the landed commit's full SHA,
   and that change is on the dotfiles `main`.
-- `copilot plugin list` shows `skills@dotfiles`, and
-  `~/.copilot/installed-plugins/dotfiles/skills/skills/` holds the new
+- `copilot plugin list` shows `skills@apm`, and
+  `~/.apm/apm_modules/fuj1g0n/skills/skills/` holds the new
   content (or no longer holds a removed skill).
 - APM changes: `apm install -g` lists them, and `~/.agents/skills/` matches.
