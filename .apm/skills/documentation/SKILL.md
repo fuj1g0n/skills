@@ -11,8 +11,8 @@ description: >
 
 This skill owns repository documentation formats: README, CHANGELOG,
 `docs/` organization (Diátaxis), docs-as-code hygiene, and OKF bundle
-conventions. It does not own decision records (`adr` skill) or SKILL.md
-authoring (`skill-authoring` skill).
+conventions. It does not own design documents or decision records
+(`software-design` skill), or SKILL.md authoring (`skill-authoring` skill).
 
 ## Organize docs/ with Diátaxis
 
@@ -78,8 +78,9 @@ directory). Inside one:
   assume.
 - Consult the spec at its canonical URL — never vendor a copy:
   <https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md>
-- ADRs inside a bundle: the `adr` skill owns their frontmatter (it adds
-  `type: Architecture Decision Record`).
+- Design documents and ADRs inside a bundle: `software-design` owns their
+  content and decision metadata; this skill owns the bundle's `type` and
+  reserved-file conventions. ADRs use `type: Architecture Decision Record`.
 
 ## Docs-as-code hygiene
 
@@ -98,7 +99,8 @@ directory). Inside one:
 
 ## Boundaries
 
-- Decision records (MADR, statuses, supersede surgery) → `adr` skill.
+- Design documents and decision records (including MADR and supersession)
+  → `software-design` skill.
 - SKILL.md authoring → `skill-authoring` skill.
 - AGENTS.md / copilot-instructions authoring: out of scope; agent
   instructions follow their harness's own conventions.

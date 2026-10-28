@@ -16,7 +16,7 @@ records either way.
 |-------|---------|--------------|
 | [skill-management](.apm/skills/skill-management/SKILL.md) | Operational rules: all skill deployment via APM, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
 | [skill-authoring](.apm/skills/skill-authoring/SKILL.md) | Quality rules for writing skills: authoring contract (Ask, Hand off, Block, Done when, Invariants) enforced by `mise run audit`, description discipline, cross-model subagent testing | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
-| [adr](.apm/skills/adr/SKILL.md) | Write and maintain Architecture Decision Records in MADR 4.0 format (trigger calibration, supersede workflow, vendored MADR templates) | original (adapted from [cassiobotaro/skills](https://github.com/cassiobotaro/skills), [wshobson/agents](https://github.com/wshobson/agents), [github/awesome-copilot](https://github.com/github/awesome-copilot), all MIT; MADR templates from [adr/madr](https://github.com/adr/madr)) |
+| [software-design](.apm/skills/software-design/SKILL.md) | Resolve design questions and preserve the smallest useful artifact: inline reasoning, design document, or ADR; reuse active Ponytail/pstack workflows | original design workflow; ADR concepts adapted from [cassiobotaro/skills](https://github.com/cassiobotaro/skills), [wshobson/agents](https://github.com/wshobson/agents), [github/awesome-copilot](https://github.com/github/awesome-copilot), all MIT; MADR templates from [adr/madr](https://github.com/adr/madr) |
 | [documentation](.apm/skills/documentation/SKILL.md) | Project documentation formats: Diátaxis docs/ organization, standard-readme, Keep a Changelog, docs-as-code hygiene, OKF bundle conventions | original (adapted from [RichardLitt/standard-readme](https://github.com/RichardLitt/standard-readme) and [wshobson/agents](https://github.com/wshobson/agents), both MIT; concepts from [diataxis.fr](https://diataxis.fr/) and [keepachangelog.com](https://keepachangelog.com/)) |
 | [project-toolchain-selection](.apm/skills/project-toolchain-selection/SKILL.md) | Select the one project development toolchain: mise by default, Nix only for projects distributed through Nix | original |
 | [project-dev-tools](.apm/skills/project-dev-tools/SKILL.md) | Manage cross-platform project developer tools and environment through mise, preferring verified release backends such as `aqua:` | original |
@@ -39,6 +39,24 @@ tools prefer an official self-upgrading per-user binary, otherwise Nix in
 Linux or WSL and WinGet user scope on native Windows. Toolchain skills may
 pin a task runner but do not define recipes. See
 `project-toolchain-selection`.
+
+### Design workflow
+
+`software-design` replaces the former `adr` entry point. Use it for an
+explicit design question, design document, or decision record; routine
+coding does not require a separate design phase or new document.
+ADR remains an output format, with existing collections and templates
+preserved. Fresh logs do not automatically get a format-adoption record.
+
+When pstack architect already owns design, its rationale and sketch stay
+authoritative; the skill consumes them without repeating analysis or adding
+approval. Ponytail's active level continues to constrain scope and
+simplicity. See the [integration adapter](.apm/skills/software-design/references/workflow-integration.md)
+for boundaries, including optional execution decision trails.
+
+After a release, whole-package installations obtain the replacement through
+their normal APM update. A single-skill dependency on `.apm/skills/adr`
+needs its path changed to `.apm/skills/software-design` at the new pin.
 
 ## Install
 
