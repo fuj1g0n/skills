@@ -6,10 +6,7 @@ read their own text with a blank slate.
 
 Adapted from obra/superpowers `writing-skills` /
 `testing-skills-with-subagents.md` (MIT) and mizchi/skills
-`meta/empirical-prompt-tuning` (MIT), trimmed for a small personal
-collection — no failure-pattern ledger, no automated grader CLI, no
-convergence metrics. Revisit the full upstream apparatus if the collection
-grows past ~20 skills.
+`meta/empirical-prompt-tuning` (MIT).
 
 ## Contents
 
@@ -21,21 +18,19 @@ grows past ~20 skills.
 ## 0. When to run and on which models
 
 Run an evaluation when a change touches an Ask, an invariant, a
-`## Done when` bullet, or a description. Other edits rely on `mise run audit`;
+`## Done when` bullet, or a description. Other edits rely on source checks;
 testing more than the change needs costs time without new signal.
 
-Every scenario runs on each target model, a fresh subagent per model per
-scenario, at the model's default reasoning effort (use the harness's
-per-task model override):
+Select models and runtimes from the adopter's task and applicable project
+policy. Keep any repository-specific model profile outside the distributed
+skill. Use the harness's configured model selection and supported effort.
+Do not assume another adopter can access the author's models.
 
-| Target model | Default effort |
-|---|---|
-| Claude Opus 5.5 | `medium` |
-| GPT-6.1 Sol | `medium` |
-
-A change passes only when it passes on every target model. This table is
-the only place in the collection that names models; update it when the
-target generation changes.
+Every scenario uses a fresh subagent for each selected target. A change
+passes for that target only when its required scenarios pass.
+Report which models and runtimes actually ran. Repeated runs on one model
+do not establish cross-model behavior. If a required target or fresh-agent
+runner is unavailable, report that coverage as unverified.
 
 Add these items to every scenario's frozen checklist:
 

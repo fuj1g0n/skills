@@ -1,6 +1,6 @@
 ---
 type: Design
-status: proposed
+status: implemented
 ---
 
 # Instruction scopes for public skills
@@ -16,28 +16,31 @@ but kept the assumption that every adopter follows the author's repository
 workflow. That assumption is false. Changing "APM" to "Agent Plugins" in a
 handoff does not remove the wrong audience or completion conditions.
 
-This proposal replaces that assumption. It covers the two skills, their
+This design replaces that assumption. It covers the two skills, their
 bundled references and scripts, producer repository instructions, and the
 companion consumer configuration. It does not generalize every other skill
 or change the Agent Plugins schema, runtime integrations, or selected tools.
-The proposal is not implemented by adding this document.
+The shared workflows and their source-validation interface are implemented.
+Behavior coverage and remaining verification limits are separate results.
 
-## Evidence in the current instructions
+## Problems in the reviewed revision
 
-- [skill-management](../../skills/skill-management/SKILL.md) names the
+The following describes revision `27e6acc7`, before the implementation.
+
+- [skill-management](https://github.com/fuj1g0n/skills/blob/27e6acc7fa8c1e8dc24fb8519bd05cb626626fea/skills/skill-management/SKILL.md) named the
   author's checkout, dotfiles manifest, marketplace, and deployment paths.
-  Its completion conditions require changes on both repositories' `main`
+  Its completion conditions required changes on both repositories' `main`
   branches and an installation in the author's environment.
-- [skill-authoring](../../skills/skill-authoring/SKILL.md) requires
+- [skill-authoring](https://github.com/fuj1g0n/skills/blob/27e6acc7fa8c1e8dc24fb8519bd05cb626626fea/skills/skill-authoring/SKILL.md) required
   `mise run audit` in the adopter's workspace. The repository's
   [task definition](../../mise.toml) also runs a toolchain-routing corpus.
   That task does not exist in every adopter's repository.
-- [testing-skills.md](../../skills/skill-authoring/references/testing-skills.md)
-  requires two named models and assumes a small personal collection.
-  Those requirements describe one maintainer's evaluation profile.
-- [audit.sh](../../skills/skill-authoring/scripts/audit.sh) accepts a target
-  directory but defaults to the collection containing its installed copy.
-  Calling it without a target can validate the installed package instead
+- [testing-skills.md](https://github.com/fuj1g0n/skills/blob/27e6acc7fa8c1e8dc24fb8519bd05cb626626fea/skills/skill-authoring/references/testing-skills.md)
+  required two named models and assumed a small personal collection.
+  Those requirements described one maintainer's evaluation profile.
+- [audit.sh](https://github.com/fuj1g0n/skills/blob/27e6acc7fa8c1e8dc24fb8519bd05cb626626fea/skills/skill-authoring/scripts/audit.sh) accepted a target
+  directory but defaulted to the collection containing its installed copy.
+  Calling it without a target could validate the installed package instead
   of the skill the adopter changed.
 
 Repository names in package metadata, attribution, and examples are not
@@ -131,13 +134,14 @@ It would still ship the wrong policy to adopters and make shared workflows
 depend on the author's configuration.
 
 Separate shared workflows and scoped repository instructions are the
-proposed design. They keep reusable validators in the package and put
+selected design. They keep reusable validators in the package and put
 repository-specific commands next to the repository configuration they use.
 No new installer, adapter, policy registry, or additional skill is needed.
 
-## Acceptance scenarios for implementation
+## Acceptance conditions
 
-These are proposed tests, not results from an implementation.
+These conditions define expected behavior, not a claim that every target
+model and runtime has been exercised.
 
 | Scenario | Required observable outcome |
 | --- | --- |
@@ -151,21 +155,22 @@ These are proposed tests, not results from an implementation.
 | One selected client fails to load a required component | The failure is reported for that client. An installer exit code does not turn it into success or justify an untested fallback. |
 | A maintainer edits this collection | Repository instructions select `mise run audit`, the routing corpus, and the repository's evaluation profile. Those commands do not become adopter requirements. |
 
-Mechanical regression coverage should distinguish operational assumptions
-from legitimate identity and attribution. A fixture requiring a personal
-checkout must fail. An attribution URL must pass. Add the check to this
-repository's audit task, not as a new obligation in every distributed skill.
-Behavior evaluations must exercise the separate writing, publication, and
-consumption completion conditions. Unavailable evaluation targets are
-reported as unavailable, not replaced with a claimed cross-model pass.
+The repository's instruction-scope regression check rejects known personal
+checkout paths, local maintenance commands, and mandatory named model
+profiles in the two shared skills and their references. Its fixtures also
+accept package identity and attribution URLs.
+The audit CLI requires an explicit source collection, and its existing
+caller now supplies `skills`. Missing and extra arguments have regression
+coverage. These checks do not prove model behavior.
 
 ## Rollout and limits
 
 Repository-scoped `AGENTS.md` files now exist in both repositories.
-The remaining implementation is to separate release guidance and rewrite
-both shared skills and their affected references as one coherent change.
-Keep stable skill identifiers and reusable validation assets.
-Run the acceptance scenarios and repository checks before release.
+The two shared workflows and affected references no longer prescribe the
+author's consumer paths, branches, maintenance task, or model profile.
+The maintainer evaluation profile lives in the README.
+Skill identifiers and the Agent Plugins manifest are unchanged.
+Run applicable behavior evaluations and repository checks before release.
 
 Producer publication and consumer adoption remain separate. Update the
 companion dotfiles pin only as an explicit consumer change after the revised
@@ -175,4 +180,27 @@ update the installed package.
 The earlier APM and Copilot integration measurements remain evidence for
 their tested revisions. They do not validate the proposed skill behavior.
 No normal user configuration, package installation, selected target, or
-runtime integration changes as part of this design-only revision.
+runtime integration changes as part of this source revision.
+
+## Validation of the implementation
+
+The existing contract fixtures, explicit-target CLI regressions, collection
+audit, instruction-scope regressions, routing corpus, and Markdown lint
+passed. Local document references were checked. The authoring body has a
+soft length flag at 153 lines; its per-run target instructions stay inline.
+
+Fresh-agent scenarios exercised writing in a Python project without mise,
+preparing a dependency-free package on a non-main branch, and updating only
+a symlinked project manifest. Their required workflow checks passed.
+Independent checks verified the generated skill, canonical package schema,
+branch and unpublished state, manifest bytes, and preserved symlink.
+The supplied skill and validator hashes matched the tested working files.
+
+The producer run reported tool-managed web responses spooled outside its
+fixture directory. Its package checks passed, but this remains a harness
+isolation caveat rather than an unqualified isolated-run pass.
+
+The agents used the harness-inherited model configuration. This does not
+satisfy the README's two-model maintainer profile, which remains unverified.
+Client installation and runtime discovery were not repeated for this
+revision. Earlier integration measurements do not fill those gaps.

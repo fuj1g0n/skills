@@ -13,9 +13,8 @@ attribution may name their actual owners.
 Keep this collection's maintenance commands and release procedures in
 repository instructions and the [README](README.md), not in distributed
 skills or their bundled references. The
-[instruction-scope proposal](docs/design/skill-instruction-scopes.md)
-records the remaining shared-skill redesign; adding these instructions
-does not complete that implementation.
+[instruction-scope design](docs/design/skill-instruction-scopes.md)
+records workflow ownership and acceptance scenarios.
 
 ## Package and publication
 
@@ -37,14 +36,14 @@ Use the tools and tasks declared in [`mise.toml`](mise.toml) and pinned in
 implicitly.
 
 - For skill or validator changes, run `mise run audit` from this repository's
-  root. It runs authoring-contract fixtures, the collection audit, and the
-  toolchain-routing corpus.
+  root. It runs authoring-contract fixtures, the collection audit,
+  instruction-scope regressions, and the toolchain-routing corpus.
 - For Markdown changes, use `mise run lint` or the configured linter with
   the changed paths. Its exclusions do not validate skill bodies.
 - For changes to triggers, invariants, or completion conditions, follow
-  the current [behavior-evaluation guidance](skills/skill-authoring/references/testing-skills.md).
-  Its named model profile is a maintenance choice for this collection,
-  not a requirement to impose on adopters.
+  the [behavior-evaluation guidance](skills/skill-authoring/references/testing-skills.md)
+  and this repository's [evaluation profile](README.md#evaluation-profile).
+  Keep that profile out of distributed skill instructions.
 - Run `git diff --check` before committing. Report unavailable behavior
   evaluations separately from passing mechanical checks.
 

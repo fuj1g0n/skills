@@ -5,10 +5,11 @@ description: Guides authoring, editing, and auditing agent skills (SKILL.md). Us
 
 # Skill Authoring
 
-Quality rules for writing skills and keeping the collection healthy. This
-skill owns *how to write* a skill. For *how to distribute* it (Agent Plugins
-packaging and release), follow `skill-management`. APM pinning and
-installation belong to its separate consumer workflow.
+Write and validate skills in the adopter's source repository.
+Read its applicable instructions and identify the intended users and task.
+This workflow covers authoring, not automatic publication or installation.
+For a separately requested package release, use `skill-management` when
+available. Its absence does not prevent writing a skill.
 
 ## When a new skill is warranted
 
@@ -84,9 +85,10 @@ an executor will "reinterpret" the body to match the description
 ## Testing a skill
 
 When a change touches an Ask, an invariant, a `## Done when` bullet, or a
-description, run the cross-model evaluation in
-[references/testing-skills.md](references/testing-skills.md). Other edits
-need only `mise run audit`.
+description, run the behavior evaluation in
+[references/testing-skills.md](references/testing-skills.md) using the
+adopter's selected models and runtimes. Other edits need the applicable
+source checks, not a publication or deployment test.
 
 ## Auditing the collection
 
@@ -94,37 +96,43 @@ Periodically, or after several skills changed, audit the whole collection:
 
 ```
 Skill audit:
-- [ ] 1. Run `mise run audit` for the mechanical pass
+- [ ] 1. Run the applicable source validator for the mechanical pass
 - [ ] 2. Audit flagged skills against references/audit-checks.md
 - [ ] 3. Cross-skill duplication pass (link or merge)
 - [ ] 4. Documentation & repo-file references pass
-- [ ] 5. Fix the findings, then re-run `mise run audit`
+- [ ] 5. Fix the findings, then re-run that validator
 ```
 
-`mise run audit` runs `scripts/test-audit.sh` (fixtures for every contract
-rule), `scripts/audit.sh [SKILLS_DIR]` (default `skills/` of this
-repository: one row per skill with line count, name/description lengths,
-references/scripts presence, then contract findings), and the
-`project-toolchain-selection` routing validators. The audit exits 1 on any
-hard (`!`) flag or fail-level finding; warnings need review but do not
-fail. The judgement checks live in
-[references/audit-checks.md](references/audit-checks.md). Find duplication
-candidates with:
+Use the adopter's existing validator when it covers the change. Otherwise,
+set `AUTHORING_DIR` to the directory containing this installed `SKILL.md`
+and `SOURCE_SKILLS_DIR` to the source collection whose direct children are
+skill directories. Run the bundled validator with that explicit target:
 
 ```bash
-rg -N '^description:' skills/*/SKILL.md
+bash "$AUTHORING_DIR/scripts/audit.sh" "$SOURCE_SKILLS_DIR"
 ```
 
-## Release checks
+The validator exits 1 on hard length flags or fail-level contract findings.
+It exits 2 for a missing target argument. Warnings require judgement but do
+not fail. It does not prove behavior or discoverability in a client.
+Read [references/audit-checks.md](references/audit-checks.md) for judgement
+checks. Find duplication candidates in the same source collection:
 
-Before committing a skill change, run `mise run audit`; then follow the
-`skill-management` packaging and release guidance for Agent Plugins.
+```bash
+rg -N '^description:' "$SOURCE_SKILLS_DIR"/*/SKILL.md
+```
+
+For a one-skill change, limit other repository checks to the affected work.
+Do not audit the installed package in place of the adopter's source.
 
 ## Done when
 
-- `mise run audit` exits 0.
+- The requested source changes pass the applicable source checks.
 - Every description trigger maps to scope the body covers (Iteration 0).
-- Cross-model evaluation passed when the change required it.
+- When required, behavior evaluation passes for the selected targets.
+  Report unavailable targets as unverified, not passed.
+- Publication, consumer pins, and installation remain unchanged unless
+  separately requested.
 
 ## Attribution
 

@@ -59,8 +59,9 @@ Placement rules:
   weight.
 - Skills are deployed away from this repository, so cite no repository
   decision records (C15); state the rule itself.
-- Name no model, vendor, or effort setting in a skill. Model-specific
-  calibration belongs in [testing-skills.md](testing-skills.md).
+- Keep required evaluation models and effort settings in the adopter's
+  project policy, not in shared instructions. Citations are not runtime
+  requirements. Use [testing-skills.md](testing-skills.md) for the method.
 
 Good:
 
