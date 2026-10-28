@@ -4,8 +4,12 @@ Home for everything involved in developing agent skills that reproduce
 @fuj1g0n's development environment and process: the research
 ([docs/research/](docs/research/)) and the resulting skills
 (`skills/`), which are the deliverables.
-The repository is an [Agent Plugin](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference) (root
-`plugin.json`), installed user-wide through APM as a native Copilot CLI plugin.
+The repository is an [Agent Plugins](https://agent-plugins.org/) package with
+a root `plugin.json`. Distribution format and consumption management are
+independent: prefer Agent Plugins for a shared, vendor-neutral structure
+across compatible tools, and APM for managing dependencies and deployment
+across explicitly selected tools. Format portability does not guarantee
+support for every component in every tool.
 
 Not every investigation yields a skill; research snapshots are kept as
 records either way.
@@ -14,7 +18,7 @@ records either way.
 
 | Skill | Purpose | Adapted from |
 |-------|---------|--------------|
-| [skill-management](skills/skill-management/SKILL.md) | Operational rules: APM release and installation, marketplace compatibility exceptions, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
+| [skill-management](skills/skill-management/SKILL.md) | Operational rules: distribution formats, APM-managed consumption, compatibility exceptions, full-SHA pinning, adoption criteria | original (concepts from mizchi/skills skill-selector) |
 | [skill-authoring](skills/skill-authoring/SKILL.md) | Quality rules for writing skills: authoring contract (Ask, Hand off, Block, Done when, Invariants) enforced by `mise run audit`, description discipline, cross-model subagent testing | original (adapted from [ryoppippi/dotfiles](https://github.com/ryoppippi/dotfiles), [obra/superpowers](https://github.com/obra/superpowers), [mizchi/skills](https://github.com/mizchi/skills), all MIT; concepts from [anthropics/skills](https://github.com/anthropics/skills), Apache 2.0) |
 | [software-design](skills/software-design/SKILL.md) | Resolve design questions and preserve the smallest useful artifact: inline reasoning, design document, or ADR; reuse active Ponytail/pstack workflows | original design workflow; ADR concepts adapted from [cassiobotaro/skills](https://github.com/cassiobotaro/skills), [wshobson/agents](https://github.com/wshobson/agents), [github/awesome-copilot](https://github.com/github/awesome-copilot), all MIT; MADR templates from [adr/madr](https://github.com/adr/madr) |
 | [documentation](skills/documentation/SKILL.md) | Project documentation formats: Diátaxis docs/ organization, standard-readme, Keep a Changelog, docs-as-code hygiene, OKF bundle conventions | original (adapted from [RichardLitt/standard-readme](https://github.com/RichardLitt/standard-readme) and [wshobson/agents](https://github.com/wshobson/agents), both MIT; concepts from [diataxis.fr](https://diataxis.fr/) and [keepachangelog.com](https://keepachangelog.com/)) |
@@ -61,8 +65,11 @@ commit that includes it.
 
 ### APM
 
-APM installs the repository as an Agent Plugin, without transitive
-dependencies, and registers it with Copilot as `skills@apm`. Declare it in
+APM is the preferred consumption manager, not the distribution format.
+Select targets explicitly in the consumer manifest and verify the components
+each tool receives. On the tested Copilot path, APM installs the repository
+as a native `skills@apm` Agent Plugin without transitive dependencies.
+Declare it in
 `apm.yml` (`~/.apm/apm.yml` for user scope) and run `apm install` (`-g` for
 user scope); APM rejects imperative installs of Agent Plugins from a local
 path.
@@ -90,6 +97,11 @@ Use a manually managed Copilot marketplace only when APM installation has a
 reproduced compatibility problem. Agent Plugins format alone is not a reason
 to bypass APM. Keep the failing behavior and the required workaround
 documented in the consumer repository.
+Scope an exception to the affected package, tool, and required capability.
+Do not install the same package through two managers in the same tool and
+scope. APM's own generated marketplace remains APM-managed consumption.
+See the consumer's [distribution and consumption design](https://github.com/fuj1g0n/.dotfiles/blob/main/docs/design/copilot-native-marketplace.md)
+for measured compatibility limits before selecting additional targets.
 
 ## Development
 

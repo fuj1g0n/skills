@@ -1,14 +1,32 @@
 ---
 name: skill-management
-description: Manages agent skill distribution and installation through APM. Use when adding, updating, removing, or evaluating skills, user-wide or per-project, or when editing skills in the personal skills repository.
+description: Manages agent package distribution formats and consumer installation workflows. Use when adding, updating, removing, or evaluating skills, user-wide or per-project, or when editing skills in the personal skills repository.
 ---
 
 # Skill Management
 
-Use APM for personal and third-party skills, including Agent Plugins.
-Use a manually managed Copilot marketplace only for a reproduced APM
-compatibility problem. Keep the failure and workaround documented in the
-consumer repository. Install targets such as `~/.apm/apm_modules/`,
+Choose distribution format and consumption manager independently.
+Prefer Agent Plugins for distributing reusable packages, so compatible tools
+can share one vendor-neutral structure. Keep portable skills and MCP
+configuration separate from namespaced client-specific capabilities.
+Do not add an APM manifest to a dependency-free package just to choose its
+consumer's installer.
+
+Prefer APM for consuming personal and third-party packages, regardless of
+their distribution format. One consumer manifest owns dependencies, pins,
+and explicitly selected tools. APM's generated marketplace is managed output,
+not a manually maintained installation path.
+
+Use a tool-native marketplace only for a reproduced APM compatibility problem.
+Record the affected package revision, runtime and installer versions, required
+capability, reproduction, workaround, and condition for returning to APM in
+the consumer repository. Keep one deployment owner per package, runtime, and
+scope. Verify required components in each selected tool before declaring
+success; an installer exit code or portable format alone does not prove
+complete support. Do not silently downgrade the package format or enable
+additional targets to work around a gap.
+
+Install targets such as `~/.apm/apm_modules/`,
 `~/.copilot/installed-plugins/`, and `~/.agents/skills/` are managed output.
 
 For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
@@ -23,7 +41,9 @@ For exact `apm.yml` syntax and CLI details, defer to the `apm-usage` skill
   `~/workspace/github.com/fuj1g0n/.dotfiles/apm/.apm/apm.yml`, symlinked to
   `~/.apm/apm.yml`. Agent Plugins register as native plugins such as
   `skills@apm`; other skills deploy to `~/.agents/skills/`.
-- **Marketplace exceptions**: `.github/plugin/marketplace.json` in
+- **Consumer targets**: read the consumer APM manifest's target selection.
+  Do not infer additional targets from the distribution format.
+- **Copilot marketplace exceptions**: `.github/plugin/marketplace.json` in
   github.com/fuj1g0n/.dotfiles, marketplace name `dotfiles`.
 - **Project scope APM manifest**: `apm.yml` in the repo; commit `apm.yml` and
   `apm.lock.yaml`, gitignore `apm_modules/`
@@ -119,4 +139,8 @@ directly in the consumer's APM manifest, including
 - `copilot plugin list` shows `skills@apm`, and
   `~/.apm/apm_modules/fuj1g0n/skills/skills/` holds the new
   content (or no longer holds a removed skill).
-- APM changes: `apm install -g` lists them, and `~/.agents/skills/` matches.
+- For each selected tool, required components are deployed and discoverable.
+  Report missing capabilities rather than treating an installer exit as
+  complete support.
+- Loose APM skills match their deployment directories, including
+  `~/.agents/skills/` for Copilot.
