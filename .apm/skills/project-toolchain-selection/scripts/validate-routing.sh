@@ -25,7 +25,10 @@ expected_routes=(
   add-flake-package:nix-package-outputs
   global-nix:nix-user-tools
   global-self-upgrading-binary:nix-user-tools
-  global-windows-native:nix-user-tools
+  global-windows-native:windows-user-tools
+  windows-self-upgrading:windows-user-tools
+  windows-other-manager:windows-user-tools
+  windows-machine-only:windows-user-tools
   global-without-nix:nix-user-tools
   missing-one-shot:missing-tools
   npm-age-gate:mise-project-toolchain

@@ -1,6 +1,6 @@
 ---
 name: nix-to-mise-project-toolchain
-description: Performs explicit full-cutover Nix-to-mise project migrations. Use when the user explicitly asks to migrate a project's development toolchain from Nix to mise+Aqua.
+description: Performs explicit full-cutover Nix-to-mise project migrations. Use when the user explicitly asks to migrate a project's development toolchain from Nix to mise.
 ---
 
 # Nix-to-mise Project Toolchain Migration

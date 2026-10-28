@@ -18,7 +18,7 @@ explicit authorization.
 ## 2. Plan
 
 Map each development tool and environment variable to an exact mise source.
-Identify Aqua provenance/checksum requirements and corporate npm admission
+Identify backend provenance/checksum requirements and corporate npm admission
 constraints. Separate task recipes, application build logic, and language
 dependency graphs from the toolchain change.
 

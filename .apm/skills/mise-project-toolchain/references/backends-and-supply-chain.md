@@ -2,16 +2,31 @@
 
 ## Backend choice
 
-Use the established project backend when one exists. For a new tool, prefer a
-mise core backend with verifiable upstream artifacts. Use Aqua through mise
-when it provides the required cross-platform package and trust metadata.
+Use the established project backend when one exists. Otherwise take the
+first that fits:
+
+1. `core:` for runtimes built into mise, such as node, python, go, and rust.
+2. `packslip:` when the publisher ships signed packslip manifests.
+3. `aqua:` for a standalone CLI with an aqua registry entry. mise checks the
+   recipe's checksum, attestation, Cosign, SLSA, and Minisign data itself;
+   it needs no aqua CLI.
+4. `github:` or `gitlab:` for release assets without an aqua entry.
+5. A language package backend only when the tool ships solely as a
+   package; npm sources follow the corporate npm policy below.
+
+A short name such as `just` resolves to the first usable backend in the mise
+registry, usually `aqua:`; check it with `mise tool <tool> --backend`. Do not
+use `asdf:`, `vfox:`, or `ubi:`: asdf plugins do not run on native Windows
+and execute shell scripts with user permissions, vfox plugins run arbitrary
+plugin code, and ubi is deprecated. When a short name resolves to one of
+them, write an explicit backend from the list instead.
 
 Pin an exact tool version and commit the project lock data. Validate artifact
 origin, checksum, signature when available, archive layout, and executable
 name. A verification failure blocks installation: report it and end without
 installing; downgrading or bypassing verification defeats the pin.
 
-Do not add an Aqua-only manifest or route to an Aqua skill. Aqua entries are
+Do not add an `aqua.yaml` or route to an aqua skill. `aqua:` entries are
 owned and activated by mise.
 
 ## Corporate npm policy

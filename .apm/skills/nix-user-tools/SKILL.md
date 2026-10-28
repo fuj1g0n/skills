@@ -1,11 +1,11 @@
 ---
 name: nix-user-tools
-description: Manages explicit user-wide tools in Linux or WSL through Nix profiles or officially recommended self-upgrading binaries in ~/.local/bin, and blocks native Windows requests. Use only for requested global installs, updates, removals, rollback, or user-profile diagnosis.
+description: Manages explicit user-wide tools in Linux or WSL through Nix profiles or officially recommended self-upgrading binaries in ~/.local/bin. Use only for requested global installs, updates, removals, rollback, or user-profile diagnosis.
 ---
 
 # Nix User Tools
 
-This is the only owner of user-wide tools, and it is explicit-only. User
+This is the explicit-only owner of user-wide tools in Linux or WSL. User
 scope uses Nix or a self-upgrading binary; mise is a project toolchain.
 
 ## Workflow
@@ -13,9 +13,10 @@ scope uses Nix or a self-upgrading binary; mise is a project toolchain.
 1. Check that the user explicitly asked for a user-wide change. Otherwise
    hand off to `missing-tools` for a one-shot need or to the project
    toolchain owner.
-2. If the target is native Windows, or the request names another user-wide
-   manager such as mise, Block: no skill owns that scope. Report the
-   request and the supported Linux or WSL route and end without changes.
+2. If the target is native Windows, hand off to `windows-user-tools`. If
+   the request names another user-wide manager such as mise, Block: no
+   skill owns that channel. Report the supported route and end without
+   changes.
 3. Inspect the existing profile, Nix installation, and `~/.local/bin`
    before changing them.
 4. For a new install, check the tool's official installation docs. When

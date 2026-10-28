@@ -52,7 +52,7 @@ authorized plan removes or replaces every authoritative package output.
 
 Strong markers are active `mise.toml` or `.mise.toml`, committed `mise.lock`,
 and CI/editor activation through `mise install`, `mise exec`, or
-`mise activate`. Aqua registry entries inside mise configuration are mise
+`mise activate`. `aqua:` backend entries inside mise configuration are mise
 evidence, not a separate toolchain.
 
 ## Neutral evidence
@@ -70,7 +70,7 @@ Project state: new | existing
 Authoritative markers: <paths and meanings>
 Ignored candidates: <paths and reason>
 Package-output constraint: present | absent | uncertain
-Recommendation: Nix | mise+Aqua | blocked | clarify
+Recommendation: Nix | mise | blocked | clarify
 Confirmation required: yes | no
 Primary owner after selection: <skill name>
 ```

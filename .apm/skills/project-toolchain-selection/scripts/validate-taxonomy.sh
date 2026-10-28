@@ -8,7 +8,7 @@ failed=0
 
 required_skills=(
   project-toolchain-selection missing-tools nix-project-toolchain
-  mise-project-toolchain nix-user-tools
+  mise-project-toolchain nix-user-tools windows-user-tools
   nix-to-mise-project-toolchain nix-package-outputs
   nix-wslc-devshell nix-direnv-gc-roots nix-github-rate-limit
 )

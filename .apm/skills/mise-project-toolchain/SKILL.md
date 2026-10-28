@@ -1,13 +1,13 @@
 ---
 name: mise-project-toolchain
-description: Manages a project's mise+Aqua tools, including adding, pinning, updating, or removing CLIs and runtimes, and activation or PATH visibility in shells, editors, and agents. Use in existing mise projects or after project-toolchain-selection selects mise.
+description: Manages a project's mise tools, including adding, pinning, updating, or removing CLIs and runtimes, and activation or PATH visibility in shells, editors, and agents. Use in existing mise projects or after project-toolchain-selection selects mise.
 ---
 
 # mise Project Toolchain
 
 Use this skill when mise is already authoritative or
-`project-toolchain-selection` has selected it. Aqua is a mise backend, not a
-standalone toolchain.
+`project-toolchain-selection` has selected it. Aqua appears only as mise's
+`aqua:` backend, never as the standalone aqua CLI or `aqua.yaml`.
 
 ## Scope contract
 
@@ -38,7 +38,7 @@ work. Existing tasks may be invoked for validation.
    report selects mise before creating files.
 3. Choose an exact version and backend. Read
    [references/backends-and-supply-chain.md](references/backends-and-supply-chain.md)
-   for Aqua and corporate npm policy.
+   for backend order and corporate npm policy.
 4. Edit project-scoped mise configuration and lock data.
 5. Activate through mise for the current shell, IDE, and agent environment.
    Keep native Windows paths native.
@@ -56,6 +56,8 @@ If Nix package outputs may exist, hand off to `project-toolchain-selection`.
 
 - No floating versions such as `latest`, because an unpinned tool is a
   different tool on the next run.
+- No `asdf:`, `vfox:`, or `ubi:` backend, because they run unverified plugin
+  code, do not run on native Windows, or are deprecated.
 - No `/nix/store` path in Win32 `PATH`, because native Windows tools would
   resolve Linux binaries.
 - No mise toolchain beside Nix package outputs, because those outputs need

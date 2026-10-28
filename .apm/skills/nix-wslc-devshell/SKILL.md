@@ -31,7 +31,7 @@ Do not own:
 - adding, pinning, or removing project development tools;
 - Nix package outputs, application builds, or release definitions;
 - task or recipe definitions and workflow orchestration;
-- Nix-to-mise migration or selection between Nix and mise+Aqua.
+- Nix-to-mise migration or selection between Nix and mise.
 
 ## Workflow
 

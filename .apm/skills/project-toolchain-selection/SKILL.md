@@ -1,6 +1,6 @@
 ---
 name: project-toolchain-selection
-description: Selects the authoritative project development toolchain. Use when initializing a project, choosing Nix versus mise+Aqua, detecting toolchain ownership, or resolving mixed toolchain markers.
+description: Selects the authoritative project development toolchain. Use when initializing a project, choosing Nix versus mise, detecting toolchain ownership, or resolving mixed toolchain markers.
 ---
 
 # Project Toolchain Selection
@@ -21,8 +21,8 @@ initialize or mutate either toolchain.
       explicit recovery plan applies, presenting the evidence for each
       authority. Edit neither system meanwhile.
    3. An existing Nix development setup continues with Nix.
-   4. An existing mise setup continues with mise+Aqua.
-   5. A new project defaults to mise+Aqua; see New projects.
+   4. An existing mise setup continues with mise.
+   5. A new project defaults to mise; see New projects.
 4. If the user explicitly asks to migrate from mise to Nix, Block: no skill
    owns that migration. Report the request and the current markers and end
    without changes.
@@ -32,7 +32,7 @@ initialize or mutate either toolchain.
 
 ## New projects
 
-Select mise+Aqua by default and name the default in the report. Select Nix
+Select mise by default and name the default in the report. Select Nix
 instead only when the project will define Nix package outputs (rule 1) or
 the user explicitly asks for Nix. Linux-only development or a Linux
 deployment target alone does not select Nix.
@@ -47,8 +47,9 @@ deployment target alone does not select Nix.
   development too, and never a mise toolchain plus package-output-only
   flake, because those outputs depend on the Nix build environment and two
   development authorities drift.
-- Aqua is a mise backend, never an independent project toolchain, because a
-  second manifest splits tool ownership.
+- The standalone aqua CLI and `aqua.yaml` are never a project toolchain,
+  because mise's `aqua:` backend needs neither and a second manifest splits
+  tool ownership.
 - Migration is explicit-only and only Nix-to-mise is supported, through
   `nix-to-mise-project-toolchain`; Windows use alone is not a migration
   request, because Nix projects already run on Windows through WSL, a Dev
