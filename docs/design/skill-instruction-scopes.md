@@ -155,10 +155,12 @@ model and runtime has been exercised.
 | One selected client fails to load a required component | The failure is reported for that client. An installer exit code does not turn it into success or justify an untested fallback. |
 | A maintainer edits this collection | Repository instructions select `mise run audit`, the routing corpus, and the repository's evaluation profile. Those commands do not become adopter requirements. |
 
-The repository's instruction-scope regression check rejects known personal
-checkout paths, local maintenance commands, and mandatory named model
-profiles in the two shared skills and their references. Its fixtures also
-accept package identity and attribution URLs.
+The repository's instruction-scope check rejects only the known author-local
+checkout and APM installation path prefixes in the two shared skills and
+the authoring references. Its fixtures accept attribution URLs and conditional
+examples of task-runner commands and model selection. It does not classify
+operational requirements by wording. Review and behavior evaluation must
+check whether instructions impose the author's policies on adopters.
 The audit CLI requires an explicit source collection, and its existing
 caller now supplies `skills`. Missing and extra arguments have regression
 coverage. These checks do not prove model behavior.
@@ -185,7 +187,7 @@ runtime integration changes as part of this source revision.
 ## Validation of the implementation
 
 The existing contract fixtures, explicit-target CLI regressions, collection
-audit, instruction-scope regressions, routing corpus, and Markdown lint
+audit, known author-path checks, routing corpus, and Markdown lint
 passed. Local document references were checked. The authoring body has a
 soft length flag at 153 lines; its per-run target instructions stay inline.
 
